@@ -4,7 +4,7 @@ module.exports = {
     {
       name: 'seedling',
       script: 'npx',
-      args: 'serve -s dist -l 3000',
+      args: 'serve -s dist -l tcp://0.0.0.0:3005',
       cwd: __dirname,
       instances: 1,
       autorestart: true,
@@ -12,6 +12,7 @@ module.exports = {
       max_memory_restart: '500M',
       env: {
         NODE_ENV: 'production',
+        PORT: '3005', // Default port, can be overridden
       },
       error_file: './logs/pm2-error.log',
       out_file: './logs/pm2-out.log',

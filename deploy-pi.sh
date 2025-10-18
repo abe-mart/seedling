@@ -64,23 +64,37 @@ fi
 # Create logs directory
 mkdir -p logs
 
+# Ask user about port selection
+echo ""
+read -p "Start on next available port? (y/n, default=n): " USE_AUTO_PORT
+echo ""
+
 # Check if app is already running
 if pm2 list | grep -q "seedling"; then
     echo -e "${GREEN}Restarting existing PM2 process...${NC}"
     npm run pm2:restart
 else
     echo -e "${GREEN}Starting new PM2 process...${NC}"
-    npm run pm2:start
-    pm2 save
+    
+    if [[ "$USE_AUTO_PORT" =~ ^[Yy]$ ]]; then
+        # Use auto port selection
+        chmod +x start-on-available-port.sh
+        ./start-on-available-port.sh 3005
+    else
+        # Use default port 3005
+        npm run pm2:start
+        pm2 save
+        
+        # Show status
+        pm2 status
+        
+        echo -e "${GREEN}✅ Deployment complete!${NC}"
+        echo ""
+        echo "Application is running on port 3005"
+        echo "Access it at: http://$(hostname -I | awk '{print $1}'):3005"
+    fi
 fi
 
-# Show status
-pm2 status
-
-echo -e "${GREEN}✅ Deployment complete!${NC}"
-echo ""
-echo "Application is running on port 3000"
-echo "Access it at: http://$(hostname -I | awk '{print $1}'):3000"
 echo ""
 echo "Useful commands:"
 echo "  npm run pm2:logs     - View logs"

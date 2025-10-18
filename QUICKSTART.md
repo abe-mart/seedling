@@ -88,10 +88,13 @@ npm run dev
    chmod +x deploy-pi.sh
    ./deploy-pi.sh
    ```
+   - Script will ask if you want auto-port selection
+   - Choose 'y' to use next available port, or 'n' for port 3005
 
 7. **Access your app**:
    - Find your Pi's IP: `hostname -I`
-   - Open browser to `http://[pi-ip]:3000`
+   - Open browser to `http://[pi-ip]:3005`
+   - (Check deployment output for actual port if using auto-port)
 
 ### Manual Setup
 ```bash
@@ -132,11 +135,16 @@ npm run typecheck    # Check TypeScript types
 
 ### Production (Raspberry Pi)
 ```bash
-npm run pm2:start    # Start with PM2
-npm run pm2:stop     # Stop application
-npm run pm2:restart  # Restart application
-npm run pm2:logs     # View logs
-npm run pm2:status   # Check status
+npm run pm2:start         # Start on port 3005
+npm run pm2:start:auto    # Start on next available port
+npm run pm2:stop          # Stop application
+npm run pm2:restart       # Restart application
+npm run pm2:logs          # View logs
+npm run pm2:status        # Check status (shows port)
+
+# Auto-port scripts
+./start-on-available-port.sh       # Find and use next available port (from 3005)
+./start-on-available-port.sh 5000  # Start searching from port 5000
 
 # Update application
 git pull

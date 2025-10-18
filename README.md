@@ -219,8 +219,15 @@ npm run build
 ### 8. Start with PM2
 
 ```bash
-# Start the application with PM2
+# Option 1: Start on default port (3005)
 npm run pm2:start
+
+# Option 2: Automatically use next available port
+npm run pm2:start:auto
+
+# Or use the deployment script which will ask
+chmod +x deploy-pi.sh
+./deploy-pi.sh
 
 # Save PM2 process list
 pm2 save
@@ -228,6 +235,9 @@ pm2 save
 # Check status
 pm2 status
 ```
+
+**Auto Port Selection**: The app can automatically find and use the next available port above 3005 if port 3005 is already in use. See [AUTO-PORT-GUIDE.md](AUTO-PORT-GUIDE.md) for details.
+
 
 The application will now be running on `http://localhost:3000`
 
@@ -240,10 +250,15 @@ To access from other devices on your network:
 hostname -I
 
 # Configure firewall (if ufw is enabled)
-sudo ufw allow 3000/tcp
+sudo ufw allow 3005/tcp
+
+# If using auto-port, allow a range
+sudo ufw allow 3005:3100/tcp
 ```
 
-Access the app at `http://[raspberry-pi-ip]:3000`
+Access the app at `http://[raspberry-pi-ip]:3005` (or the port shown in the deployment output)
+
+**Note**: If you used auto-port selection, check the deployment output or PM2 logs to see which port was assigned.
 
 ## Environment Configuration
 
@@ -269,8 +284,15 @@ The application requires these Supabase features:
 ### PM2 Commands
 
 ```bash
-# Start application
+# Start application on default port (3005)
 npm run pm2:start
+
+# Start on next available port (auto-detect)
+npm run pm2:start:auto
+
+# Or use the start script directly
+./start-on-available-port.sh        # Auto-detect from port 3005
+./start-on-available-port.sh 5000   # Auto-detect from port 5000
 
 # Stop application
 npm run pm2:stop
@@ -281,7 +303,7 @@ npm run pm2:restart
 # View logs
 npm run pm2:logs
 
-# Check status
+# Check status (shows which port is being used)
 npm run pm2:status
 
 # Or use PM2 directly

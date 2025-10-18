@@ -75,7 +75,7 @@ Your app is now ready to run on both Windows (development) and Raspberry Pi (pro
 
 5. **Access your app**:
    - Get Pi's IP: `hostname -I`
-   - Open: `http://[pi-ip]:3000`
+   - Open: `http://[pi-ip]:3005`
 
 ## 📚 Documentation Quick Links
 
