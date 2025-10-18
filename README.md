@@ -1,9 +1,10 @@
 # Seedling - AI Writing Prompt App
 
-A React + TypeScript + Supabase application for fiction writers to build their story worlds through personalized AI-powered prompts.
+A React + TypeScript application for fiction writers to build their story worlds through personalized AI-powered prompts.
 
 ## Table of Contents
 - [Overview](#overview)
+- [Backend Options](#backend-options)
 - [Prerequisites](#prerequisites)
 - [Windows Development Setup](#windows-development-setup)
 - [Raspberry Pi Production Setup](#raspberry-pi-production-setup)
@@ -18,7 +19,29 @@ This application can be run in two configurations:
 1. **Windows Development**: Local development with Vite dev server
 2. **Raspberry Pi Production**: Production build served with PM2 and local PostgreSQL
 
-## Prerequisites
+## Backend Options
+
+You can choose between two backend configurations:
+
+### Option 1: Supabase Cloud (Recommended for Simplicity)
+- ✅ Managed authentication
+- ✅ Hosted database
+- ✅ Free tier available
+- ✅ Less setup required
+
+**Documentation**: Use this README
+
+### Option 2: PostgreSQL + Express (Full Local Control)
+- ✅ Complete data ownership
+- ✅ No cloud dependencies
+- ✅ Custom API backend
+- ✅ Runs entirely on your Pi
+
+**Documentation**: See [POSTGRES-SETUP.md](POSTGRES-SETUP.md) for complete PostgreSQL setup
+
+---
+
+## Prerequisites (Supabase Cloud Setup)
 
 ### Windows (Development)
 - Node.js 18+ (Download from [nodejs.org](https://nodejs.org/))

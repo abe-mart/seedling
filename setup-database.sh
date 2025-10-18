@@ -17,7 +17,32 @@ DB_NAME="seedling"
 DB_USER="seedling_user"
 DB_PASSWORD=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MIGRATION_FILE="${SCRIPT_DIR}/supabase/migrations/20251017235241_create_initial_schema.sql"
+
+# Ask which migration to use
+echo ""
+echo "Which setup do you want?"
+echo "1) Supabase Cloud (uses supabase.com for auth - RECOMMENDED)"
+echo "2) PostgreSQL only (local database, you need to build your own auth)"
+read -p "Enter choice (1 or 2): " SETUP_CHOICE
+echo ""
+
+if [ "$SETUP_CHOICE" = "1" ]; then
+    echo -e "${YELLOW}Supabase Cloud Setup Selected${NC}"
+    echo -e "${YELLOW}After this script, you'll need to:${NC}"
+    echo "1. Sign up at https://supabase.com"
+    echo "2. Create a new project"
+    echo "3. Run the migration SQL in Supabase SQL Editor"
+    echo "4. Get your project URL and anon key"
+    echo "5. Update .env with those credentials"
+    echo ""
+    read -p "Press Enter to continue..."
+    MIGRATION_FILE="${SCRIPT_DIR}/supabase/migrations/20251017235241_create_initial_schema.sql"
+    USE_SUPABASE=true
+else
+    echo -e "${GREEN}PostgreSQL-only Setup Selected${NC}"
+    MIGRATION_FILE="${SCRIPT_DIR}/supabase/migrations/20251017235241_postgres_only.sql"
+    USE_SUPABASE=false
+fi
 
 # Prompt for password
 read -sp "Enter password for database user '${DB_USER}': " DB_PASSWORD
@@ -89,8 +114,30 @@ fi
 echo ""
 echo -e "${GREEN}✅ Database setup complete!${NC}"
 echo ""
-echo "Database connection string:"
-echo "postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}"
+
+if [ "$USE_SUPABASE" = true ]; then
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}Next steps for Supabase Cloud:${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo "1. Go to https://supabase.com and create a project"
+    echo "2. In SQL Editor, paste: supabase/migrations/20251017235241_create_initial_schema.sql"
+    echo "3. Update your .env file:"
+    echo ""
+    echo "   VITE_SUPABASE_URL=https://your-project.supabase.co"
+    echo "   VITE_SUPABASE_ANON_KEY=your_anon_key_here"
+    echo ""
+    echo -e "${GREEN}With Supabase Cloud, you don't need this local database.${NC}"
+    echo "You can drop it: sudo -u postgres psql -c 'DROP DATABASE seedling;'"
+else
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}PostgreSQL-only setup complete!${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo "Database URL: postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}"
+    echo ""
+    echo -e "${RED}⚠️  IMPORTANT:${NC} You'll need to modify your app for custom auth!"
+    echo "The Supabase client expects Supabase's auth system."
+    echo ""
+    echo -e "${YELLOW}Recommendation: Use Supabase Cloud instead (it's free and easier!)${NC}"
+fi
 echo ""
-echo "Note: Save this connection string securely!"
-echo "You'll need it for Supabase self-hosted configuration."

@@ -50,6 +50,24 @@ fi
 echo -e "${GREEN}Installing dependencies...${NC}"
 npm install
 
+# Install API dependencies if using PostgreSQL backend
+if [ -d "api" ] && [ -f "api/package.json" ]; then
+    echo -e "${GREEN}Installing API dependencies...${NC}"
+    cd api
+    npm install
+    
+    # Create logs directory for API
+    mkdir -p logs
+    
+    # Check if API .env exists
+    if [ ! -f .env ]; then
+        echo -e "${YELLOW}⚠️  API .env file not found!${NC}"
+        echo -e "${YELLOW}Copy api/.env.example to api/.env and configure it${NC}"
+    fi
+    
+    cd ..
+fi
+
 # Run TypeScript check
 echo -e "${GREEN}Running type check...${NC}"
 npm run typecheck
@@ -73,8 +91,23 @@ echo ""
 if pm2 list | grep -q "seedling"; then
     echo -e "${GREEN}Restarting existing PM2 process...${NC}"
     npm run pm2:restart
+    
+    # Also restart API if it exists
+    if pm2 list | grep -q "seedling-api"; then
+        echo -e "${GREEN}Restarting API server...${NC}"
+        cd api && pm2 restart seedling-api && cd ..
+    fi
 else
     echo -e "${GREEN}Starting new PM2 process...${NC}"
+    
+    # Start API first if it exists
+    if [ -d "api" ] && [ -f "api/ecosystem.config.cjs" ]; then
+        echo -e "${GREEN}Starting API server...${NC}"
+        cd api
+        pm2 start ecosystem.config.cjs
+        pm2 save
+        cd ..
+    fi
     
     if [[ "$USE_AUTO_PORT" =~ ^[Yy]$ ]]; then
         # Use auto port selection
@@ -92,6 +125,11 @@ else
         echo ""
         echo "Application is running on port 3005"
         echo "Access it at: http://$(hostname -I | awk '{print $1}'):3005"
+        
+        if [ -d "api" ]; then
+            echo "API is running on port 3006"
+            echo "API URL: http://$(hostname -I | awk '{print $1}'):3006"
+        fi
     fi
 fi
 

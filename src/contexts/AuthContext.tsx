@@ -1,13 +1,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { apiClient } from '../lib/api';
+
+interface User {
+  id: string;
+  email: string;
+  created_at: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -15,72 +19,54 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check if user is already logged in
+    const token = apiClient.getToken();
+    if (token) {
+      apiClient.getUser()
+        .then(data => {
+          setUser(data.user);
+        })
+        .catch(() => {
+          apiClient.signOut();
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
       setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      (async () => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (!existingProfile) {
-            await supabase.from('profiles').insert({
-              id: session.user.id,
-              email: session.user.email!,
-            });
-
-            await supabase.from('user_settings').insert({
-              user_id: session.user.id,
-            });
-          }
-        }
-      })();
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          display_name: displayName,
-        },
-      },
-    });
-    return { error };
+    try {
+      const data = await apiClient.signUp(email, password, displayName);
+      setUser(data.user);
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const data = await apiClient.signIn(email, password);
+      setUser(data.user);
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    apiClient.signOut();
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

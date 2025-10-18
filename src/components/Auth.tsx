@@ -23,6 +23,10 @@ export default function Auth() {
       } else {
         const { error } = await signUp(email, password, displayName);
         if (error) setError(error.message);
+        else {
+          setError(null);
+          // Optionally show success message
+        }
       }
     } finally {
       setLoading(false);
