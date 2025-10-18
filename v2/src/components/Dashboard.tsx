@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
-import { Flame, BookOpen, PenTool, LogOut, Plus, Lightbulb } from 'lucide-react';
+import { Flame, BookOpen, PenTool, LogOut, Plus, Lightbulb, User, Check, X } from 'lucide-react';
 import PromptInterface from './PromptInterface';
 import ProjectManager from './ProjectManager';
 import PromptHistory from './PromptHistory';
@@ -22,12 +22,31 @@ export default function Dashboard() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [editingDisplayName, setEditingDisplayName] = useState(false);
+  const [displayNameValue, setDisplayNameValue] = useState('');
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
       loadDashboardData();
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setShowAccountMenu(false);
+        setEditingDisplayName(false);
+      }
+    };
+
+    if (showAccountMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showAccountMenu]);
 
   const loadDashboardData = async () => {
     if (!user) return;
@@ -51,6 +70,32 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleStartEditingDisplayName = () => {
+    setDisplayNameValue(profile?.display_name || '');
+    setEditingDisplayName(true);
+  };
+
+  const handleSaveDisplayName = async () => {
+    if (!user || !displayNameValue.trim()) return;
+
+    setSavingDisplayName(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: displayNameValue.trim() })
+      .eq('id', user.id);
+
+    if (!error) {
+      setProfile(prev => prev ? { ...prev, display_name: displayNameValue.trim() } : null);
+      setEditingDisplayName(false);
+    }
+    setSavingDisplayName(false);
+  };
+
+  const handleCancelEditingDisplayName = () => {
+    setEditingDisplayName(false);
+    setDisplayNameValue('');
   };
 
   const loadAllPrompts = async () => {
@@ -169,13 +214,98 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Sign Out</span>
-              </button>
+              {/* Account Menu */}
+              <div className="relative" ref={accountMenuRef}>
+                <button
+                  onClick={() => setShowAccountMenu(!showAccountMenu)}
+                  className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="hidden sm:inline font-medium">
+                    {profile?.display_name || user?.email?.split('@')[0]}
+                  </span>
+                </button>
+
+                {showAccountMenu && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                    {/* User Info Section */}
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center">
+                          <User className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-slate-500">Signed in as</div>
+                          <div className="text-sm font-medium text-slate-900 truncate">{user?.email}</div>
+                        </div>
+                      </div>
+
+                      {/* Display Name Section */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-2">
+                          Display Name
+                        </label>
+                        {editingDisplayName ? (
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={displayNameValue}
+                              onChange={(e) => setDisplayNameValue(e.target.value)}
+                              placeholder="Enter your name"
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveDisplayName();
+                                if (e.key === 'Escape') handleCancelEditingDisplayName();
+                              }}
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleSaveDisplayName}
+                                disabled={savingDisplayName || !displayNameValue.trim()}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Check className="w-4 h-4" />
+                                {savingDisplayName ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                onClick={handleCancelEditingDisplayName}
+                                disabled={savingDisplayName}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors disabled:opacity-50"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 px-3 py-2 bg-slate-50 rounded-lg text-sm text-slate-900">
+                              {profile?.display_name || 'Not set'}
+                            </div>
+                            <button
+                              onClick={handleStartEditingDisplayName}
+                              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Sign Out Button */}
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
