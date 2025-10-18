@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { auth, requireAuth } from './auth.js';
 import { pool } from './db.js';
 import { generateAIPrompt, getAvailableModes } from './api/openai.js';
+import { toNodeHandler } from 'better-auth/node';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,8 +27,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'StorySeed API is running' });
 });
 
-// Auth routes - handled by Better Auth
-app.all('/api/auth/*', (req, res) => auth.handler(req, res));
+// Auth routes - handled by Better Auth with Node.js adapter
+app.all('/api/auth/*', toNodeHandler(auth));
 
 // ==================== PROFILES ====================
 

@@ -2,17 +2,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { betterAuth } from 'better-auth';
-import { pool } from './db.js';
+import { Pool } from 'pg';
 
 console.log('🔐 Initializing Better Auth...');
 console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
 console.log('BETTER_AUTH_SECRET exists:', !!process.env.BETTER_AUTH_SECRET);
 
+// Better Auth configuration with PostgreSQL
 export const auth = betterAuth({
-  database: {
-    provider: 'postgres',
-    url: process.env.DATABASE_URL,
-  },
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL,
+  }),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
