@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { PenTool, Loader2 } from 'lucide-react';
+import { Sprout, Loader2 } from 'lucide-react';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -33,8 +33,8 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-900 rounded-2xl mb-4">
-            <PenTool className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-lime-500 to-green-600 rounded-2xl mb-4 shadow-lg">
+            <Sprout className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">StorySeed</h1>
           <p className="text-slate-600">Your AI-powered creative companion</p>
