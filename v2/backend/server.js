@@ -120,6 +120,32 @@ app.post('/api/books', requireAuth, async (req, res) => {
   }
 });
 
+app.delete('/api/books/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Verify ownership before deleting
+    const ownerCheck = await pool.query(
+      'SELECT user_id FROM books WHERE id = $1',
+      [id]
+    );
+    
+    if (ownerCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+    
+    if (ownerCheck.rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    
+    // Delete the book (cascade will handle related elements, prompts, etc.)
+    await pool.query('DELETE FROM books WHERE id = $1', [id]);
+    res.json({ message: 'Book deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting book:', error);
+    res.status(500).json({ error: 'Failed to delete book' });
+  }
+});
+
 // ==================== STORY ELEMENTS ====================
 
 app.get('/api/elements', requireAuth, async (req, res) => {

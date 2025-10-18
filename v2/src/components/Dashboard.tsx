@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
   const [recentPrompts, setRecentPrompts] = useState<Prompt[]>([]);
+  const [totalPromptCount, setTotalPromptCount] = useState(0);
   const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
   const [activeView, setActiveView] = useState<'dashboard' | 'prompt' | 'projects' | 'history'>('dashboard');
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
@@ -52,15 +53,17 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
-      const [profileData, booksData, promptsData] = await Promise.all([
+      const [profileData, booksData, promptsData, allPromptsData] = await Promise.all([
         api.profile.get(),
         api.books.list(),
         api.prompts.list({ limit: 5 }),
+        api.prompts.list(), // Get all prompts for count
       ]);
 
       setProfile(profileData);
       setBooks(booksData);
       setRecentPrompts(promptsData);
+      setTotalPromptCount(allPromptsData.length);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -145,9 +148,13 @@ export default function Dashboard() {
   if (activeView === 'prompt') {
     return (
       <PromptInterface 
-        onBack={() => setActiveView('dashboard')} 
+        onBack={() => {
+          setActiveView('dashboard');
+          loadDashboardData(); // Refresh data when returning to dashboard
+        }}
         onRefresh={loadDashboardData}
         onViewHistory={handleViewHistory}
+        onNavigateToElement={handleNavigateToElement}
       />
     );
   }
@@ -159,6 +166,7 @@ export default function Dashboard() {
           setSelectedBookId(null);
           setSelectedElementId(null);
           setActiveView('dashboard');
+          loadDashboardData(); // Refresh data when returning to dashboard
         }}
         initialBookId={selectedBookId}
         initialElementId={selectedElementId}
@@ -169,7 +177,10 @@ export default function Dashboard() {
   if (activeView === 'history') {
     return (
       <PromptHistory
-        onBack={() => setActiveView('dashboard')}
+        onBack={() => {
+          setActiveView('dashboard');
+          loadDashboardData(); // Refresh data when returning to dashboard
+        }}
         prompts={allPrompts}
         onNavigateToElement={handleNavigateToElement}
         onNavigateToStory={handleNavigateToStory}
@@ -214,7 +225,7 @@ export default function Dashboard() {
                   className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full hover:bg-green-100 transition-colors group"
                 >
                   <Lightbulb className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-semibold text-green-900">{recentPrompts.length}</span>
+                  <span className="text-sm font-semibold text-green-900">{totalPromptCount}</span>
                   <span className="text-sm text-green-700">prompts</span>
                 </button>
               </div>

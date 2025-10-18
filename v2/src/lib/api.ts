@@ -65,6 +65,10 @@ export const booksAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  delete: (id: string) =>
+    fetchAPI(`/api/books/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // ==================== STORY ELEMENTS ====================

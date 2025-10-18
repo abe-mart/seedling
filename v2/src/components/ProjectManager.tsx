@@ -35,6 +35,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedElement, setSelectedElement] = useState<StoryElement | null>(null);
   const [showModal, setShowModal] = useState<'series' | 'book' | 'element' | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({ title: '', description: '', elementType: 'character' as const });
 
   useEffect(() => {
@@ -138,6 +139,21 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
       }
     } catch (error) {
       console.error('Error deleting element:', error);
+    }
+  };
+
+  const handleDeleteBook = async () => {
+    if (!selectedBook) return;
+
+    try {
+      await api.books.delete(selectedBook.id);
+      setShowDeleteConfirm(false);
+      setSelectedBook(null);
+      setSelectedElement(null);
+      loadProjects();
+    } catch (error) {
+      console.error('Error deleting book:', error);
+      alert('Failed to delete story. Please try again.');
     }
   };
 
@@ -257,13 +273,22 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
                       <p className="text-slate-600 mt-1">{selectedBook.description}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => setShowModal('element')}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Element
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                      title="Delete story"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setShowModal('element')}
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Element
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -406,6 +431,40 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
                   Create
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {showDeleteConfirm && selectedBook && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Story?</h3>
+                <p className="text-slate-600">
+                  Are you sure you want to delete <span className="font-semibold">"{selectedBook.title}"</span>? 
+                  This will permanently delete the story and all of its elements. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteBook}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete Story
+              </button>
             </div>
           </div>
         </div>

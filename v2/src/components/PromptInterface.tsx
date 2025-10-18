@@ -20,6 +20,7 @@ interface PromptInterfaceProps {
   onBack: () => void;
   onRefresh: () => void;
   onViewHistory?: () => void;
+  onNavigateToElement?: (bookId: string, elementId: string) => void;
 }
 
 const PROMPT_MODES = [
@@ -59,7 +60,7 @@ function getAvailableModes(elements: StoryElement[]): string[] {
   return modes;
 }
 
-export default function PromptInterface({ onBack, onRefresh, onViewHistory }: PromptInterfaceProps) {
+export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNavigateToElement }: PromptInterfaceProps) {
   const { user } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [elements, setElements] = useState<StoryElement[]>([]);
@@ -315,6 +316,12 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory }: Pr
       setGeneratedPromptText('');
       setGeneratedElementRefs([]);
       onRefresh();
+
+      // Navigate to the first story element that was referenced, if available
+      if (onNavigateToElement && generatedElementRefs.length > 0 && selectedBook) {
+        const firstElementId = generatedElementRefs[0];
+        onNavigateToElement(selectedBook, firstElementId);
+      }
     } catch (error) {
       console.error('Error saving response:', error);
       alert('Failed to save response. Please try again.');
