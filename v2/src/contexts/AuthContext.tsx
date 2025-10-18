@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { authClient } from '../lib/auth-client';
+import { useSession, signIn as authSignIn, signUp as authSignUp, signOut as authSignOut } from '../lib/auth-client';
 import { api } from '../lib/api';
 
 interface User {
@@ -8,15 +8,8 @@ interface User {
   name?: string;
 }
 
-interface Session {
-  token: string;
-  userId: string;
-  expiresAt: Date;
-}
-
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -26,80 +19,61 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const session = useSession();
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on mount
-    checkSession();
-  }, []);
-
-  const checkSession = async () => {
-    try {
-      const sessionData = await authClient.getSession();
-      if (sessionData) {
-        setSession(sessionData as any);
-        setUser(sessionData.user as any);
-        
-        // Create profile and settings if they don't exist
-        try {
-          await api.profile.get();
-        } catch (error) {
-          // Profile doesn't exist, will be created on backend or ignore
-          console.log('Profile check:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Session check error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (email: string, password: string, displayName?: string) => {
-    try {
-      await authClient.signUp.email({
-        email,
-        password,
-        name: displayName,
-      });
+    // Update user from session
+    if (session.data?.user) {
+      setUser(session.data.user as User);
       
-      // Refresh session after signup
-      await checkSession();
-      return { error: null };
-    } catch (error) {
-      return { error: error as Error };
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      await authClient.signIn.email({
-        email,
-        password,
+      // Create profile if it doesn't exist
+      api.profile.get().catch(() => {
+        console.log('Profile will be created on first access');
       });
-      
-      // Refresh session after signin
-      await checkSession();
-      return { error: null };
-    } catch (error) {
-      return { error: error as Error };
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      await authClient.signOut();
+    } else {
       setUser(null);
-      setSession(null);
-    } catch (error) {
-      console.error('Sign out error:', error);
     }
+  }, [session.data]);
+
+  const handleSignUp = async (email: string, password: string, displayName?: string) => {
+    try {
+      await authSignUp.email({
+        email,
+        password,
+        name: displayName || email.split('@')[0]
+      });
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const handleSignIn = async (email: string, password: string) => {
+    try {
+      await authSignIn.email({
+        email,
+        password
+      });
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const handleSignOut = async () => {
+    await authSignOut();
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading: session.isPending, 
+      signUp: handleSignUp, 
+      signIn: handleSignIn, 
+      signOut: handleSignOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );
