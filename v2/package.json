@@ -10,7 +10,13 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "start": "npm run build && node backend/server.js"
+    "start": "npm run build && node backend/server.js",
+    "pm2:start": "npm run build && pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop seedling-v2",
+    "pm2:restart": "pm2 restart seedling-v2",
+    "pm2:logs": "pm2 logs seedling-v2",
+    "pm2:status": "pm2 status",
+    "deploy": "./deploy.sh"
   },
   "dependencies": {
     "@types/cors": "^2.8.19",

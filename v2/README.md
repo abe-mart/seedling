@@ -1,4 +1,10 @@
-# StorySeed - AI-Powered Custom Writing Prompt App
+# StorySeed v2
+
+Modern React + Better Auth implementation with local PostgreSQL database.
+
+**Status**: ✅ Deployed with PM2  
+**Port**: 3005  
+**Access**: http://localhost:3005
 
 An AI-driven creative companion for fiction writers that helps build story worlds, deepen characters, and develop story elements through personalized daily writing prompts.
 
@@ -43,6 +49,44 @@ Before running this project locally, ensure you have the following installed:
 - **Node.js** (version 18 or higher)
 - **npm** (comes with Node.js)
 - **Git** (for cloning the repository)
+
+## 🚀 PM2 Production Deployment
+
+This application is currently deployed with PM2 on Raspberry Pi.
+
+### Quick Commands
+
+```bash
+# Management script (recommended)
+./manage.sh status    # Check status
+./manage.sh logs      # View logs
+./manage.sh restart   # Restart app
+./manage.sh health    # Health check
+./manage.sh help      # All commands
+
+# Or use PM2 directly
+pm2 status seedling-v2
+pm2 logs seedling-v2
+pm2 restart seedling-v2
+```
+
+### Deployment
+
+```bash
+# Full deployment (build + restart)
+./deploy.sh
+
+# Quick restart (no build)
+./restart.sh
+```
+
+### Documentation
+
+- 📖 [PM2 Deployment Guide](PM2_DEPLOYMENT.md)
+- 📝 [Quick Reference](QUICK_REFERENCE_PM2.md)
+- ✅ [Deployment Success](DEPLOYMENT_SUCCESS.md)
+
+---
 
 ## Getting Started
 
