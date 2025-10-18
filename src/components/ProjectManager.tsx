@@ -1,0 +1,379 @@
+import { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { Database } from '../lib/database.types';
+import {
+  ArrowLeft,
+  Plus,
+  BookOpen,
+  Users,
+  MapPin,
+  Lightbulb,
+  Package,
+  Flag,
+  Edit2,
+  Trash2,
+  X,
+} from 'lucide-react';
+
+type Series = Database['public']['Tables']['series']['Row'];
+type Book = Database['public']['Tables']['books']['Row'];
+type StoryElement = Database['public']['Tables']['story_elements']['Row'];
+
+interface ProjectManagerProps {
+  onBack: () => void;
+}
+
+export default function ProjectManager({ onBack }: ProjectManagerProps) {
+  const { user } = useAuth();
+  const [series, setSeries] = useState<Series[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [elements, setElements] = useState<StoryElement[]>([]);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [showModal, setShowModal] = useState<'series' | 'book' | 'element' | null>(null);
+  const [formData, setFormData] = useState({ title: '', description: '', elementType: 'character' as const });
+
+  useEffect(() => {
+    loadProjects();
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedBook) {
+      loadElements(selectedBook.id);
+    }
+  }, [selectedBook]);
+
+  const loadProjects = async () => {
+    if (!user) return;
+
+    const [seriesData, booksData] = await Promise.all([
+      supabase.from('series').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('books').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    ]);
+
+    if (seriesData.data) setSeries(seriesData.data);
+    if (booksData.data) setBooks(booksData.data);
+    if (booksData.data && booksData.data.length > 0 && !selectedBook) {
+      setSelectedBook(booksData.data[0]);
+    }
+  };
+
+  const loadElements = async (bookId: string) => {
+    const { data } = await supabase
+      .from('story_elements')
+      .select('*')
+      .eq('book_id', bookId)
+      .order('created_at', { ascending: false });
+
+    if (data) setElements(data);
+  };
+
+  const handleCreateBook = async () => {
+    if (!user || !formData.title) return;
+
+    const { error } = await supabase.from('books').insert({
+      user_id: user.id,
+      title: formData.title,
+      description: formData.description,
+    });
+
+    if (!error) {
+      setShowModal(null);
+      setFormData({ title: '', description: '', elementType: 'character' });
+      loadProjects();
+    }
+  };
+
+  const handleCreateElement = async () => {
+    if (!user || !selectedBook || !formData.title) return;
+
+    const { error } = await supabase.from('story_elements').insert({
+      book_id: selectedBook.id,
+      user_id: user.id,
+      element_type: formData.elementType,
+      name: formData.title,
+      description: formData.description,
+    });
+
+    if (!error) {
+      setShowModal(null);
+      setFormData({ title: '', description: '', elementType: 'character' });
+      loadElements(selectedBook.id);
+    }
+  };
+
+  const handleDeleteElement = async (elementId: string) => {
+    if (!confirm('Are you sure you want to delete this element?')) return;
+
+    const { error } = await supabase.from('story_elements').delete().eq('id', elementId);
+
+    if (!error && selectedBook) {
+      loadElements(selectedBook.id);
+    }
+  };
+
+  const getElementIcon = (type: string) => {
+    switch (type) {
+      case 'character':
+        return Users;
+      case 'location':
+        return MapPin;
+      case 'plot_point':
+        return Flag;
+      case 'item':
+        return Package;
+      case 'theme':
+        return Lightbulb;
+      default:
+        return Lightbulb;
+    }
+  };
+
+  const getElementColor = (type: string) => {
+    switch (type) {
+      case 'character':
+        return 'bg-blue-100 text-blue-700';
+      case 'location':
+        return 'bg-green-100 text-green-700';
+      case 'plot_point':
+        return 'bg-orange-100 text-orange-700';
+      case 'item':
+        return 'bg-purple-100 text-purple-700';
+      case 'theme':
+        return 'bg-pink-100 text-pink-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-2xl font-bold text-slate-900">Project Manager</h1>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-900">Projects</h2>
+                <button
+                  onClick={() => setShowModal('book')}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {books.map((book) => (
+                  <button
+                    key={book.id}
+                    onClick={() => setSelectedBook(book)}
+                    className={`w-full text-left p-4 rounded-lg transition-colors ${
+                      selectedBook?.id === book.id
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="w-5 h-5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold truncate">{book.title}</div>
+                        {book.description && (
+                          <div
+                            className={`text-sm truncate ${
+                              selectedBook?.id === book.id ? 'text-slate-300' : 'text-slate-600'
+                            }`}
+                          >
+                            {book.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+
+                {books.length === 0 && (
+                  <div className="text-center py-8 text-slate-500">
+                    <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No projects yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2">
+            {selectedBook ? (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">{selectedBook.title}</h2>
+                    {selectedBook.description && (
+                      <p className="text-slate-600 mt-1">{selectedBook.description}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowModal('element')}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Element
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {elements.map((element) => {
+                    const Icon = getElementIcon(element.element_type);
+                    return (
+                      <div
+                        key={element.id}
+                        className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${getElementColor(
+                              element.element_type
+                            )}`}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <button
+                            onClick={() => handleDeleteElement(element.id)}
+                            className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <h3 className="font-semibold text-slate-900 mb-1">{element.name}</h3>
+                        <p className="text-sm text-slate-600 capitalize mb-2">
+                          {element.element_type.replace('_', ' ')}
+                        </p>
+                        {element.description && (
+                          <p className="text-sm text-slate-700 line-clamp-2">{element.description}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {elements.length === 0 && (
+                  <div className="text-center py-12">
+                    <Lightbulb className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">No story elements yet</h3>
+                    <p className="text-slate-600 mb-4">
+                      Add characters, locations, and other elements to your story
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+                <BookOpen className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Select a project</h3>
+                <p className="text-slate-600">Choose a project to view and manage its story elements</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900">
+                {showModal === 'book' ? 'Create Project' : 'Add Story Element'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowModal(null);
+                  setFormData({ title: '', description: '', elementType: 'character' });
+                }}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {showModal === 'element' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                  <select
+                    value={formData.elementType}
+                    onChange={(e) =>
+                      setFormData({ ...formData, elementType: e.target.value as any })
+                    }
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none"
+                  >
+                    <option value="character">Character</option>
+                    <option value="location">Location</option>
+                    <option value="plot_point">Plot Point</option>
+                    <option value="item">Item</option>
+                    <option value="theme">Theme</option>
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {showModal === 'book' ? 'Title' : 'Name'}
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none"
+                  placeholder={showModal === 'book' ? 'My Story' : 'Element name'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none resize-none"
+                  placeholder="Add a description..."
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowModal(null);
+                    setFormData({ title: '', description: '', elementType: 'character' });
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={showModal === 'book' ? handleCreateBook : handleCreateElement}
+                  disabled={!formData.title}
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
