@@ -143,7 +143,13 @@ export default function Dashboard() {
   }
 
   if (activeView === 'prompt') {
-    return <PromptInterface onBack={() => setActiveView('dashboard')} onRefresh={loadDashboardData} />;
+    return (
+      <PromptInterface 
+        onBack={() => setActiveView('dashboard')} 
+        onRefresh={loadDashboardData}
+        onViewHistory={handleViewHistory}
+      />
+    );
   }
 
   if (activeView === 'projects') {

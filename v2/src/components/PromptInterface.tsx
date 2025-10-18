@@ -7,9 +7,7 @@ import {
   Sparkles,
   Save,
   History,
-  BookOpen,
   Loader2,
-  Calendar,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -17,11 +15,11 @@ import {
 type Book = Database['public']['Tables']['books']['Row'];
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
 type Prompt = Database['public']['Tables']['prompts']['Row'];
-type Response = Database['public']['Tables']['responses']['Row'];
 
 interface PromptInterfaceProps {
   onBack: () => void;
   onRefresh: () => void;
+  onViewHistory?: () => void;
 }
 
 const PROMPT_MODES = [
@@ -32,24 +30,6 @@ const PROMPT_MODES = [
   { id: 'dialogue', label: 'Dialogue Practice', description: 'Develop voice and tone through scenarios' },
   { id: 'conflict_theme', label: 'Conflict & Theme', description: 'Examine moral choices and narrative tension' },
 ];
-
-const PROMPT_TYPE_LABELS: Record<string, string> = {
-  character_deep_dive: 'Character Deep Dive',
-  plot_development: 'Plot Development',
-  worldbuilding: 'Worldbuilding',
-  dialogue: 'Dialogue',
-  conflict_theme: 'Conflict & Theme',
-  general: 'General',
-};
-
-const PROMPT_TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  character_deep_dive: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-  plot_development: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-  worldbuilding: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  dialogue: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-  conflict_theme: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-  general: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
-};
 
 // Helper function to determine available modes based on elements
 function getAvailableModes(elements: StoryElement[]): string[] {
@@ -79,7 +59,7 @@ function getAvailableModes(elements: StoryElement[]): string[] {
   return modes;
 }
 
-export default function PromptInterface({ onBack, onRefresh }: PromptInterfaceProps) {
+export default function PromptInterface({ onBack, onRefresh, onViewHistory }: PromptInterfaceProps) {
   const { user } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [elements, setElements] = useState<StoryElement[]>([]);
@@ -92,14 +72,11 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [promptHistory, setPromptHistory] = useState<(Prompt & { responses: Response[] })[]>([]);
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showAdvancedModes, setShowAdvancedModes] = useState(false);
 
   useEffect(() => {
     loadBooks();
-    loadPromptHistory();
   }, [user]);
 
   useEffect(() => {
@@ -157,23 +134,6 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
     }
   };
 
-  const loadPromptHistory = async () => {
-    if (!user) return;
-    try {
-      const prompts = await api.prompts.list({ limit: 20 });
-
-      const promptsWithResponses = await Promise.all(
-        prompts.map(async (prompt: Prompt) => {
-          const responses = await api.responses.list(prompt.id);
-          return { ...prompt, responses: responses || [] };
-        })
-      );
-      setPromptHistory(promptsWithResponses);
-    } catch (error) {
-      console.error('Error loading prompt history:', error);
-    }
-  };
-
   const generatePrompt = async () => {
     if (!user || !selectedBook) return;
 
@@ -203,26 +163,10 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
       });
       
       const aiPromptText = result.prompt;
+      const usedElements = result.usedElements || [];
 
-      // Determine which elements were actually referenced in the generated prompt
-      let finalElementReferences = selectedTags;
-      if (finalElementReferences.length === 0 && elements.length > 0) {
-        // If no elements were selected, the AI service picked one - we need to figure out which
-        // For now, we'll use the first element from availableElements that matches the mode preference
-        const modePreferences: Record<string, string[]> = {
-          character_deep_dive: ['character'],
-          plot_development: ['plot_point', 'character'],
-          worldbuilding: ['location', 'item', 'theme'],
-          dialogue: ['character'],
-          conflict_theme: ['theme', 'character', 'plot_point'],
-          general: ['character', 'location', 'plot_point', 'item', 'theme'],
-        };
-        const preferredTypes = modePreferences[selectedMode] || modePreferences.general;
-        const matchedElement = elements.find(el => preferredTypes.includes(el.element_type));
-        if (matchedElement) {
-          finalElementReferences = [matchedElement.id];
-        }
-      }
+      // Use the actual elements that were used by the AI, not a guess
+      const finalElementReferences = usedElements.map((el: any) => el.id);
 
       // Store the generated prompt in memory (don't save to database yet)
       setGeneratedPromptText(aiPromptText);
@@ -370,7 +314,6 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
       setSelectedTags([]);
       setGeneratedPromptText('');
       setGeneratedElementRefs([]);
-      await loadPromptHistory();
       onRefresh();
     } catch (error) {
       console.error('Error saving response:', error);
@@ -402,101 +345,6 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
   const filteredElements = getFilteredElements();
 
-  if (showHistory) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <header className="bg-white border-b border-slate-200">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setShowHistory(false)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <h1 className="text-2xl font-bold text-slate-900">Prompt History</h1>
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-slate-600">
-                {promptHistory.length} {promptHistory.length === 1 ? 'prompt' : 'prompts'} generated
-              </p>
-            </div>
-
-            {promptHistory.map((prompt) => {
-              const colors = PROMPT_TYPE_COLORS[prompt.prompt_type] || PROMPT_TYPE_COLORS.general;
-              const book = prompt.book_id ? books.find(b => b.id === prompt.book_id) : null;
-              
-              return (
-                <div
-                  key={prompt.id}
-                  className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
-                    {/* Date */}
-                    <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(prompt.generated_at).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                    </div>
-                    
-                    <div className="h-4 w-px bg-slate-300" />
-                    
-                    {/* Story Tag */}
-                    {book && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 text-white border border-slate-900">
-                        <BookOpen className="w-3 h-3" />
-                        {book.title}
-                      </span>
-                    )}
-                    
-                    {/* Prompt Type Tag */}
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}>
-                      {PROMPT_TYPE_LABELS[prompt.prompt_type] || 'General'}
-                    </span>
-                    
-                    {/* Prompt Mode Tag - only show if it's different from the type */}
-                    {prompt.prompt_mode && prompt.prompt_mode !== prompt.prompt_type && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                        {prompt.prompt_mode}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="prose prose-slate max-w-none mb-4">
-                    <p className="text-slate-900 leading-relaxed whitespace-pre-wrap">
-                      {prompt.prompt_text}
-                    </p>
-                  </div>
-
-                  {prompt.responses.length > 0 && (
-                    <div className="border-t border-slate-200 pt-4">
-                      {prompt.responses.map((response) => (
-                        <div key={response.id} className="text-slate-700 text-sm">
-                          <div className="mb-2 text-slate-500 text-xs">
-                            {response.word_count} words
-                          </div>
-                          <p className="whitespace-pre-wrap">{response.response_text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200">
@@ -508,13 +356,15 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
               </button>
               <h1 className="text-2xl font-bold text-slate-900">Writing Prompt</h1>
             </div>
-            <button
-              onClick={() => setShowHistory(true)}
-              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <History className="w-4 h-4" />
-              History
-            </button>
+            {onViewHistory && (
+              <button
+                onClick={onViewHistory}
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <History className="w-4 h-4" />
+                History
+              </button>
+            )}
           </div>
         </div>
       </header>

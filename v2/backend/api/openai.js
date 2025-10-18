@@ -44,7 +44,10 @@ export async function generateAIPrompt(options) {
       max_tokens: 300,
     });
 
-    return completion.choices[0]?.message?.content || 'What detail about this element would you like to explore further?';
+    return {
+      prompt: completion.choices[0]?.message?.content || 'What detail about this element would you like to explore further?',
+      usedElements: elementsToUse // Return the actual elements that were used
+    };
   } catch (error) {
     console.error('Error generating AI prompt:', error);
     throw error;

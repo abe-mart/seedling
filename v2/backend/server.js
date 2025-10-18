@@ -304,7 +304,7 @@ app.post('/api/generate-prompt', requireAuth, async (req, res) => {
   const { promptMode, storyContext, selectedElements, availableElements, elementHistory } = req.body;
   
   try {
-    const prompt = await generateAIPrompt({
+    const result = await generateAIPrompt({
       promptMode,
       storyContext,
       selectedElements,
@@ -312,7 +312,11 @@ app.post('/api/generate-prompt', requireAuth, async (req, res) => {
       elementHistory
     });
     
-    res.json({ prompt });
+    // Return both the prompt and the elements that were actually used
+    res.json({ 
+      prompt: result.prompt,
+      usedElements: result.usedElements 
+    });
   } catch (error) {
     console.error('Error generating AI prompt:', error);
     res.status(500).json({ error: 'Failed to generate prompt' });
