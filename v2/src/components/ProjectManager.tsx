@@ -180,7 +180,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-bold text-slate-900">Project Manager</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Story Manager</h1>
           </div>
         </div>
       </header>

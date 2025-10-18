@@ -8,7 +8,11 @@ An AI-driven creative companion for fiction writers that helps build story world
 - **User Authentication** - Secure email/password authentication with Supabase
 - **Project Organization** - Organize your creative work into Series, Books, and Story Elements
 - **Story Elements** - Track Characters, Locations, Plot Points, Items, and Themes
-- **AI-Generated Prompts** - Context-aware writing prompts tailored to your story universe
+- **AI-Generated Prompts** - Context-aware writing prompts powered by OpenAI GPT-4o-mini
+  - Automatically references at least one story element in each prompt
+  - Includes past questions and answers for continuity
+  - Uses character interview technique to draw out your ideas
+  - Focuses on helping you develop your own story, not writing it for you
 - **Multiple Prompt Modes**:
   - General - Balanced prompts for overall development
   - Character Deep Dive - Explore motivations and relationships
@@ -16,6 +20,7 @@ An AI-driven creative companion for fiction writers that helps build story world
   - Worldbuilding - Build locations, cultures, and systems
   - Dialogue Practice - Develop voice and tone through scenarios
   - Conflict & Theme - Examine moral choices and narrative tension
+- **Intelligent Element Selection** - If you don't select an element, the AI picks one that makes sense
 - **Writing Interface** - Clean, distraction-free editor with auto-save
 - **Daily Streak Tracking** - Monitor consecutive days of writing to stay motivated
 - **Prompt History** - Browse and search all past prompts and responses
@@ -29,6 +34,7 @@ An AI-driven creative companion for fiction writers that helps build story world
 - **Build Tool**: Vite
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth
+- **AI**: OpenAI GPT-4o-mini for prompt generation
 
 ## Prerequisites
 
@@ -55,14 +61,23 @@ npm install
 
 ### 3. Environment Setup
 
-The project is pre-configured with Supabase connection details. The `.env` file already contains:
+Create a `.env` file in the root directory with the following variables:
 
 ```
-VITE_SUPABASE_URL=https://0ec90b57d6e95fcbda19832f.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon-key>
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_OPENAI_API_KEY=your_openai_api_key
 ```
 
-**Note**: These environment variables are already set up and connected to a working Supabase instance with the required database schema.
+**Required Environment Variables:**
+
+1. **Supabase**: The project is pre-configured with Supabase connection details for the database.
+2. **OpenAI API Key**: Required for AI-powered prompt generation
+   - Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+   - The app uses GPT-4o-mini for cost-effective, high-quality prompt generation
+   - Typical cost: ~$0.001 per prompt generation
+
+**Important**: Never commit your `.env` file to version control. Use `.env.example` as a template.
 
 ### 4. Database Schema
 
@@ -145,10 +160,32 @@ project/
 
 1. **Login** to your account
 2. **View Dashboard** to see your current streak and recent activity
-3. **Generate a Prompt** based on your selected mode and story elements
-4. **Write Your Response** in the distraction-free editor (auto-saves as you type)
-5. **Save & Finish** to complete the prompt and update your streak
-6. **Review History** to browse past prompts and responses
+3. **Select a Story** and optionally choose specific story elements to focus on
+4. **Choose a Prompt Mode** that matches what you want to work on today
+5. **Generate AI Prompt** - The AI will create a personalized question referencing your story elements and past work
+6. **Write Your Response** in the distraction-free editor (auto-saves as you type)
+7. **Save & Finish** to complete the prompt and update your streak
+8. **Review History** to browse past prompts and responses
+
+### How AI Prompt Generation Works
+
+StorySeed uses OpenAI's GPT-4o-mini to generate highly personalized writing prompts:
+
+1. **Context-Aware**: The AI analyzes your story's title, description, and all story elements
+2. **Element-Focused**: Every prompt references at least one story element by name
+3. **History Integration**: Past questions and answers are included so the AI builds on previous work
+4. **Smart Selection**: If you don't select an element, the AI picks one that makes sense for the prompt mode
+5. **Interview Technique**: Questions are designed to draw out YOUR ideas, not write the story for you
+6. **Mode-Specific**: Each prompt mode has specialized instructions for the AI to focus on different aspects
+
+**Example**: If you have a character named "Sarah" and select Character Deep Dive mode, the AI might ask:
+> "What childhood experience taught Sarah to hide her emotions, and how does this defense mechanism fail her in moments of genuine crisis?"
+
+The AI considers:
+- Sarah's existing descriptions and notes
+- Past prompts about Sarah and their answers
+- Other related story elements
+- The character interview approach to deepen your understanding
 
 ### Managing Projects
 

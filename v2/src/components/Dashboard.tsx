@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
-import { Flame, BookOpen, PenTool, LogOut, Plus, Lightbulb, User, Check, X } from 'lucide-react';
+import { Flame, BookOpen, LogOut, Plus, Lightbulb, User, Check, X, Sprout } from 'lucide-react';
 import PromptInterface from './PromptInterface';
 import ProjectManager from './ProjectManager';
 import PromptHistory from './PromptHistory';
@@ -180,8 +180,8 @@ export default function Dashboard() {
           <div className="flex items-center justify-between gap-6">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                <PenTool className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-lime-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm">
+                <Sprout className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-slate-900">StorySeed</h1>
             </div>

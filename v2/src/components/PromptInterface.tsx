@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
+import { generateAIPrompt } from '../lib/openai';
 import {
   ArrowLeft,
   Sparkles,
@@ -39,6 +40,8 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
   const [books, setBooks] = useState<Book[]>([]);
   const [elements, setElements] = useState<StoryElement[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
+  const [generatedPromptText, setGeneratedPromptText] = useState<string>(''); // Temporary storage before saving
+  const [generatedElementRefs, setGeneratedElementRefs] = useState<string[]>([]); // Temporary storage before saving
   const [responseText, setResponseText] = useState('');
   const [selectedBook, setSelectedBook] = useState<string>('');
   const [selectedMode, setSelectedMode] = useState('general');
@@ -129,63 +132,98 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
     setLoading(true);
     try {
-      const selectedElements = elements.filter((el) => selectedTags.includes(el.id));
-      const elementContext = selectedElements.map((el) => `${el.element_type}: ${el.name}`).join(', ');
-
-      const prompts = {
-        general: [
-          `What unexpected connection exists between ${elementContext || 'your story elements'}?`,
-          'Describe a moment of quiet reflection for one of your characters. What are they thinking about?',
-          'What hidden detail about your world would surprise your readers?',
-        ],
-        character_deep_dive: [
-          `What secret fear drives ${elementContext || 'your character'} that they would never admit to others?`,
-          `Describe a childhood memory that still influences ${elementContext || 'your character'} today.`,
-          `What would ${elementContext || 'your character'} sacrifice everything for?`,
-        ],
-        plot_development: [
-          'What crucial decision point could change the entire direction of your story?',
-          'Describe the moment when everything goes wrong for your protagonist.',
-          'What truth is hiding in plain sight that your characters have not yet discovered?',
-        ],
-        worldbuilding: [
-          `What makes ${elementContext || 'this location'} unique in your world?`,
-          'What unwritten rule governs daily life in your story world?',
-          'Describe a cultural tradition that reveals the values of your world.',
-        ],
-        dialogue: [
-          `Write a tense conversation between two characters where neither says what they truly mean.`,
-          'What would your character say in their darkest moment?',
-          'Capture a moment of humor or levity that reveals character personality.',
-        ],
-        conflict_theme: [
-          'What moral line will your character refuse to cross?',
-          'Describe a choice where every option comes with a cost.',
-          'What theme or question is your story ultimately exploring?',
-        ],
-      };
-
-      const modePrompts = prompts[selectedMode as keyof typeof prompts] || prompts.general;
-      const randomPrompt = modePrompts[Math.floor(Math.random() * modePrompts.length)];
-
-      const { data, error } = await supabase
-        .from('prompts')
-        .insert({
-          user_id: user.id,
-          book_id: selectedBook,
-          prompt_text: randomPrompt,
-          prompt_type: selectedMode as any,
-          prompt_mode: selectedMode,
-          element_references: selectedTags,
-        })
-        .select()
+      // Get selected book details
+      const { data: bookData } = await supabase
+        .from('books')
+        .select('*')
+        .eq('id', selectedBook)
         .single();
 
-      if (!error && data) {
-        setCurrentPrompt(data);
-        setResponseText('');
-        await updateStreak();
+      if (!bookData) throw new Error('Book not found');
+
+      // Get selected or determine which elements to use
+      const selectedElements = elements.filter((el) => selectedTags.includes(el.id));
+      
+      // Load history for the selected elements (or all if none selected)
+      const elementsForHistory = selectedElements.length > 0 ? selectedElements : elements;
+      const elementHistory = await Promise.all(
+        elementsForHistory.slice(0, 5).map(async (element) => {
+          const { data: prompts } = await supabase
+            .from('prompts')
+            .select('*')
+            .contains('element_references', [element.id])
+            .order('generated_at', { ascending: false })
+            .limit(3);
+
+          if (!prompts) return { element, prompts: [] };
+
+          const promptsWithResponses = await Promise.all(
+            prompts.map(async (prompt) => {
+              const { data: responses } = await supabase
+                .from('responses')
+                .select('*')
+                .eq('prompt_id', prompt.id)
+                .limit(1);
+              return { ...prompt, responses: responses || [] };
+            })
+          );
+
+          return { element, prompts: promptsWithResponses };
+        })
+      );
+
+      // Generate AI prompt
+      const aiPromptText = await generateAIPrompt({
+        promptMode: selectedMode,
+        storyContext: {
+          bookTitle: bookData.title,
+          bookDescription: bookData.description || undefined,
+        },
+        selectedElements: selectedElements,
+        availableElements: elements,
+        elementHistory: elementHistory,
+      });
+
+      // Determine which elements were actually referenced in the generated prompt
+      let finalElementReferences = selectedTags;
+      if (finalElementReferences.length === 0 && elements.length > 0) {
+        // If no elements were selected, the AI service picked one - we need to figure out which
+        // For now, we'll use the first element from availableElements that matches the mode preference
+        const modePreferences: Record<string, string[]> = {
+          character_deep_dive: ['character'],
+          plot_development: ['plot_point', 'character'],
+          worldbuilding: ['location', 'item', 'theme'],
+          dialogue: ['character'],
+          conflict_theme: ['theme', 'character', 'plot_point'],
+          general: ['character', 'location', 'plot_point', 'item', 'theme'],
+        };
+        const preferredTypes = modePreferences[selectedMode] || modePreferences.general;
+        const matchedElement = elements.find(el => preferredTypes.includes(el.element_type));
+        if (matchedElement) {
+          finalElementReferences = [matchedElement.id];
+        }
       }
+
+      // Store the generated prompt in memory (don't save to database yet)
+      setGeneratedPromptText(aiPromptText);
+      setGeneratedElementRefs(finalElementReferences);
+      setResponseText('');
+      
+      // Set a temporary prompt object for display purposes
+      setCurrentPrompt({
+        id: 'temp-' + Date.now(),
+        user_id: user.id,
+        book_id: selectedBook,
+        prompt_text: aiPromptText,
+        prompt_type: selectedMode as any,
+        prompt_mode: selectedMode,
+        element_references: finalElementReferences,
+        generated_at: new Date().toISOString(),
+      } as Prompt);
+
+    } catch (error) {
+      console.error('Error generating prompt:', error);
+      alert('Failed to generate prompt. Please check your OpenAI API key in .env file.');
     } finally {
       setLoading(false);
     }
@@ -234,6 +272,9 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
   const autoSaveResponse = async () => {
     if (!user || !currentPrompt || !responseText.trim()) return;
+    
+    // Don't auto-save if the prompt hasn't been saved to the database yet
+    if (currentPrompt.id.toString().startsWith('temp-')) return;
 
     const wordCount = responseText.trim().split(/\s+/).length;
 
@@ -268,12 +309,74 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
     setSaving(true);
     try {
-      await autoSaveResponse();
+      let savedPromptId = currentPrompt.id;
+
+      // If this is a temporary prompt (not yet saved to database), save it now
+      if (currentPrompt.id.toString().startsWith('temp-')) {
+        const { data: savedPrompt, error } = await supabase
+          .from('prompts')
+          .insert({
+            user_id: user.id,
+            book_id: currentPrompt.book_id,
+            prompt_text: generatedPromptText,
+            prompt_type: selectedMode as any,
+            prompt_mode: selectedMode,
+            element_references: generatedElementRefs,
+          })
+          .select()
+          .single();
+
+        if (error || !savedPrompt) {
+          throw new Error('Failed to save prompt');
+        }
+
+        savedPromptId = savedPrompt.id;
+        // Update the current prompt with the real saved data
+        setCurrentPrompt(savedPrompt);
+      }
+
+      // Now save the response with the real prompt ID
+      const wordCount = responseText.trim().split(/\s+/).length;
+
+      const { data: existingResponse } = await supabase
+        .from('responses')
+        .select('id')
+        .eq('prompt_id', savedPromptId)
+        .maybeSingle();
+
+      if (existingResponse) {
+        await supabase
+          .from('responses')
+          .update({
+            response_text: responseText,
+            word_count: wordCount,
+            element_tags: generatedElementRefs,
+          })
+          .eq('id', existingResponse.id);
+      } else {
+        await supabase.from('responses').insert({
+          prompt_id: savedPromptId,
+          user_id: user.id,
+          response_text: responseText,
+          word_count: wordCount,
+          element_tags: generatedElementRefs,
+        });
+      }
+
+      // Update streak after successfully saving
+      await updateStreak();
+
+      // Clear state
       setCurrentPrompt(null);
       setResponseText('');
       setSelectedTags([]);
+      setGeneratedPromptText('');
+      setGeneratedElementRefs([]);
       await loadPromptHistory();
       onRefresh();
+    } catch (error) {
+      console.error('Error saving response:', error);
+      alert('Failed to save response. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -495,6 +598,8 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
                       setCurrentPrompt(null);
                       setResponseText('');
                       setSelectedTags([]);
+                      setGeneratedPromptText('');
+                      setGeneratedElementRefs([]);
                     }
                   }}
                   className="px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
