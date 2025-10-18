@@ -1,0 +1,23 @@
+[Unit]
+Description=Seedling AI Writing Prompt App
+Documentation=https://github.com/your-repo/seedling
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/seedling
+Environment=NODE_ENV=production
+Environment=PATH=/usr/bin:/usr/local/bin
+ExecStart=/usr/bin/npx serve -s dist -l 3000
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/pi/seedling/logs/seedling.log
+StandardError=append:/home/pi/seedling/logs/seedling-error.log
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
