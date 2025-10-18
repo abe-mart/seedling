@@ -109,3 +109,4 @@ echo "  pm2 restart all    - Restart everything"
 echo "  pm2 status         - Check status"
 echo ""
 echo -e "${GREEN}Happy writing! 📝${NC}"
+
