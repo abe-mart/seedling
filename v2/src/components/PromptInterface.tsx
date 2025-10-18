@@ -2,18 +2,17 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
-import { generateAIPrompt } from '../lib/openai';
+import { generateAIPrompt, getAvailableModes } from '../lib/openai';
 import {
   ArrowLeft,
   Sparkles,
   Save,
   History,
-  Settings,
   BookOpen,
-  Tag,
   Loader2,
-  Clock,
-  Search,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 type Book = Database['public']['Tables']['books']['Row'];
@@ -35,6 +34,24 @@ const PROMPT_MODES = [
   { id: 'conflict_theme', label: 'Conflict & Theme', description: 'Examine moral choices and narrative tension' },
 ];
 
+const PROMPT_TYPE_LABELS: Record<string, string> = {
+  character_deep_dive: 'Character Deep Dive',
+  plot_development: 'Plot Development',
+  worldbuilding: 'Worldbuilding',
+  dialogue: 'Dialogue',
+  conflict_theme: 'Conflict & Theme',
+  general: 'General',
+};
+
+const PROMPT_TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  character_deep_dive: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  plot_development: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+  worldbuilding: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+  dialogue: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
+  conflict_theme: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+  general: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
+};
+
 export default function PromptInterface({ onBack, onRefresh }: PromptInterfaceProps) {
   const { user } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
@@ -51,6 +68,7 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
   const [showHistory, setShowHistory] = useState(false);
   const [promptHistory, setPromptHistory] = useState<(Prompt & { responses: Response[] })[]>([]);
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [showAdvancedModes, setShowAdvancedModes] = useState(false);
 
   useEffect(() => {
     loadBooks();
@@ -82,15 +100,30 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
   const loadBooks = async () => {
     if (!user) return;
+    
+    // Get most recent book (by last prompt generated)
+    const { data: recentPrompt } = await supabase
+      .from('prompts')
+      .select('book_id')
+      .eq('user_id', user.id)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const { data } = await supabase
       .from('books')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
+      
     if (data) {
       setBooks(data);
       if (data.length > 0 && !selectedBook) {
-        setSelectedBook(data[0].id);
+        // Default to most recently prompted book, or first book if no prompts yet
+        const defaultBook = recentPrompt?.book_id 
+          ? data.find(b => b.id === recentPrompt.book_id)?.id || data[0].id
+          : data[0].id;
+        setSelectedBook(defaultBook);
       }
     }
   };
@@ -384,6 +417,26 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
   const wordCount = responseText.trim().split(/\s+/).filter(Boolean).length;
 
+  // Filter elements based on selected prompt mode
+  const getFilteredElements = () => {
+    if (selectedMode === 'general') {
+      return elements; // General mode can use any element
+    }
+
+    const modeElementTypes: Record<string, string[]> = {
+      character_deep_dive: ['character'],
+      plot_development: ['plot_point', 'character'],
+      worldbuilding: ['character','location', 'item', 'theme'],
+      dialogue: ['character'],
+      conflict_theme: ['theme', 'character', 'plot_point'],
+    };
+
+    const allowedTypes = modeElementTypes[selectedMode] || [];
+    return elements.filter(el => allowedTypes.includes(el.element_type));
+  };
+
+  const filteredElements = getFilteredElements();
+
   if (showHistory) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -403,36 +456,76 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="space-y-4">
-            {promptHistory.map((prompt) => (
-              <div key={prompt.id} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <p className="text-slate-900 font-medium mb-2">{prompt.prompt_text}</p>
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {new Date(prompt.generated_at).toLocaleDateString()}
-                      </div>
-                      <div className="px-2 py-1 bg-slate-100 rounded text-xs font-medium capitalize">
-                        {prompt.prompt_type.replace('_', ' ')}
-                      </div>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-slate-600">
+                {promptHistory.length} {promptHistory.length === 1 ? 'prompt' : 'prompts'} generated
+              </p>
+            </div>
+
+            {promptHistory.map((prompt) => {
+              const colors = PROMPT_TYPE_COLORS[prompt.prompt_type] || PROMPT_TYPE_COLORS.general;
+              const book = prompt.book_id ? books.find(b => b.id === prompt.book_id) : null;
+              
+              return (
+                <div
+                  key={prompt.id}
+                  className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    {/* Date */}
+                    <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(prompt.generated_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })}
                     </div>
+                    
+                    <div className="h-4 w-px bg-slate-300" />
+                    
+                    {/* Story Tag */}
+                    {book && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 text-white border border-slate-900">
+                        <BookOpen className="w-3 h-3" />
+                        {book.title}
+                      </span>
+                    )}
+                    
+                    {/* Prompt Type Tag */}
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}>
+                      {PROMPT_TYPE_LABELS[prompt.prompt_type] || 'General'}
+                    </span>
+                    
+                    {/* Prompt Mode Tag - only show if it's different from the type */}
+                    {prompt.prompt_mode && prompt.prompt_mode !== prompt.prompt_type && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                        {prompt.prompt_mode}
+                      </span>
+                    )}
                   </div>
-                </div>
-                {prompt.responses.length > 0 && (
-                  <div className="border-t border-slate-200 pt-4 mt-4">
-                    {prompt.responses.map((response) => (
-                      <div key={response.id} className="text-slate-700 text-sm">
-                        <div className="mb-2 text-slate-500 text-xs">
-                          {response.word_count} words
+
+                  <div className="prose prose-slate max-w-none mb-4">
+                    <p className="text-slate-900 leading-relaxed whitespace-pre-wrap">
+                      {prompt.prompt_text}
+                    </p>
+                  </div>
+
+                  {prompt.responses.length > 0 && (
+                    <div className="border-t border-slate-200 pt-4">
+                      {prompt.responses.map((response) => (
+                        <div key={response.id} className="text-slate-700 text-sm">
+                          <div className="mb-2 text-slate-500 text-xs">
+                            {response.word_count} words
+                          </div>
+                          <p className="whitespace-pre-wrap">{response.response_text}</p>
                         </div>
-                        <p className="whitespace-pre-wrap">{response.response_text}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </main>
       </div>
@@ -479,33 +572,78 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
               </select>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Prompt Mode</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {PROMPT_MODES.map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setSelectedMode(mode.id)}
-                    className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedMode === mode.id
-                        ? 'border-slate-900 bg-slate-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="font-semibold text-slate-900 mb-1">{mode.label}</div>
-                    <div className="text-sm text-slate-600">{mode.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Advanced modes - collapsible */}
+            {getAvailableModes(elements).length > 1 && (
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    if (showAdvancedModes) {
+                      // Reset to general mode when collapsing
+                      setSelectedMode('general');
+                    }
+                    setShowAdvancedModes(!showAdvancedModes);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-slate-900 py-2 transition-colors"
+                >
+                  {showAdvancedModes ? (
+                    <>
+                      <ChevronUp className="w-4 h-4" />
+                      Hide Advanced Options
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4" />
+                      Show Advanced Prompt Types
+                    </>
+                  )}
+                </button>
 
-            {elements.length > 0 && (
-              <div className="mb-6">
+                {showAdvancedModes && (
+                  <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <label className="block text-sm font-medium text-slate-700 mb-3">
+                      Specialized Prompt Types
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {getAvailableModes(elements).filter(mode => mode !== 'general').map((modeId) => {
+                        const mode = PROMPT_MODES.find(m => m.id === modeId);
+                        if (!mode) return null;
+                        return (
+                          <button
+                            key={mode.id}
+                            onClick={() => setSelectedMode(mode.id)}
+                            className={`p-3 rounded-lg border-2 transition-all text-left ${
+                              selectedMode === mode.id
+                                ? 'border-lime-500 bg-lime-50'
+                                : 'border-slate-200 hover:border-slate-300 bg-white'
+                            }`}
+                          >
+                            <div className="font-medium text-slate-900 text-sm">{mode.label}</div>
+                            <div className="text-xs text-slate-600 mt-0.5">{mode.description}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    {selectedMode !== 'general' && (
+                      <button
+                        onClick={() => setSelectedMode('general')}
+                        className="mt-3 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                      >
+                        ← Clear Specialized Prompt Type
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {filteredElements.length > 0 && showAdvancedModes && (
+              <div className="mb-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Focus Elements (Optional)
+                  Focus on Specific Elements (Optional)
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {elements.map((element) => (
+                  {filteredElements.map((element) => (
                     <button
                       key={element.id}
                       onClick={() =>
@@ -515,23 +653,27 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
                             : [...prev, element.id]
                         )
                       }
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                         selectedTags.includes(element.id)
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          ? 'bg-lime-600 text-white'
+                          : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                       }`}
                     >
                       {element.name}
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  Leave unselected for AI to choose relevant elements automatically
+                </p>
               </div>
             )}
 
+            {/* Generate button - now appears after advanced options */}
             <button
               onClick={generatePrompt}
               disabled={loading || !selectedBook}
-              className="w-full bg-slate-900 text-white py-4 px-6 rounded-lg font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-lime-500 to-green-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-lime-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-lime-500/30"
             >
               {loading ? (
                 <>

@@ -4,6 +4,7 @@ import { Database } from '../lib/database.types';
 import { supabase } from '../lib/supabase';
 
 type Prompt = Database['public']['Tables']['prompts']['Row'];
+type Response = Database['public']['Tables']['responses']['Row'];
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
 
@@ -36,10 +37,12 @@ const PROMPT_TYPE_COLORS: Record<string, { bg: string; text: string; border: str
 export default function PromptHistory({ onBack, prompts, onNavigateToElement, onNavigateToStory, isLoading = false }: PromptHistoryProps) {
   const [elementMap, setElementMap] = useState<Map<string, StoryElement>>(new Map());
   const [bookMap, setBookMap] = useState<Map<string, Book>>(new Map());
+  const [responseMap, setResponseMap] = useState<Map<string, Response[]>>(new Map());
 
   useEffect(() => {
     loadElements();
     loadBooks();
+    loadResponses();
   }, [prompts]);
 
   const loadElements = async () => {
@@ -83,6 +86,27 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
       const map = new Map<string, Book>();
       data.forEach(book => map.set(book.id, book));
       setBookMap(map);
+    }
+  };
+
+  const loadResponses = async () => {
+    if (prompts.length === 0) return;
+
+    // Load all responses for all prompts
+    const promptIds = prompts.map(p => p.id);
+    const { data } = await supabase
+      .from('responses')
+      .select('*')
+      .in('prompt_id', promptIds)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      const map = new Map<string, Response[]>();
+      data.forEach(response => {
+        const existing = map.get(response.prompt_id) || [];
+        map.set(response.prompt_id, [...existing, response]);
+      });
+      setResponseMap(map);
     }
   };
 
@@ -147,20 +171,22 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
             {prompts.map((prompt) => {
               const colors = PROMPT_TYPE_COLORS[prompt.prompt_type] || PROMPT_TYPE_COLORS.general;
               const book = prompt.book_id ? bookMap.get(prompt.book_id) : null;
+              const responses = responseMap.get(prompt.id) || [];
               
               return (
                 <div
                   key={prompt.id}
                   className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    {/* Date */}
+                    <div className="flex items-center gap-1.5 text-sm text-slate-500">
                       <Calendar className="w-4 h-4" />
                       {formatDate(prompt.generated_at)}
                     </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    
+                    <div className="h-4 w-px bg-slate-300" />
+                    
                     {/* Story Tag */}
                     {book && (
                       <button
@@ -216,6 +242,19 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
                           })}
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {responses.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      {responses.map((response) => (
+                        <div key={response.id} className="text-slate-700 text-sm">
+                          <div className="mb-2 text-slate-500 text-xs">
+                            {response.word_count} words
+                          </div>
+                          <p className="whitespace-pre-wrap">{response.response_text}</p>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

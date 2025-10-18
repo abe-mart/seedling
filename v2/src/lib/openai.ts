@@ -86,26 +86,55 @@ function selectRandomElement(elements: StoryElement[], mode: string): StoryEleme
 }
 
 function buildSystemPrompt(mode: string): string {
-  const basePrompt = `You are a creative writing assistant specialized in helping authors develop their stories through thoughtful, interview-style questions. Your role is NOT to write the story or worldbuild for them, but to draw out the author's own ideas through insightful questions.
+  const basePrompt = `You are a creative writing assistant helping authors develop their stories through brief, focused questions. Your role is to draw out the author's ideas ONE SMALL DETAIL AT A TIME.
 
-Your questions should:
-- Be specific to the story elements provided
-- Help the author explore deeper layers of their characters, world, and plot
-- Use the "character interview" technique - ask questions that reveal hidden depths
-- Reference previous questions and answers to build continuity
-- Be open-ended to encourage detailed responses
-- Focus on motivations, conflicts, relationships, and consequences
-- Never be generic - always personalize to the specific element
-
-Generate ONE focused question that will help the author flesh out their story element.`;
+CRITICAL RULES:
+- Ask ONE specific, bite-sized question
+- Questions should be answerable in 2-4 sentences
+- Focus on concrete details, not abstract concepts
+- Reference story elements by name when possible
+- Build on previous answers if provided
+- DO NOT ask the author to write scenes or dialogue
+- DO NOT ask philosophical or overly complex questions
+- DO NOT try to worldbuild for them - draw out their existing ideas`;
 
   const modeSpecifics: Record<string, string> = {
-    character_deep_dive: `\n\nFor CHARACTER mode: Focus on psychology, motivations, fears, desires, relationships, backstory, growth arcs, and internal conflicts. Ask about moments that shaped them, secrets they keep, how they react under pressure.`,
-    plot_development: `\n\nFor PLOT mode: Focus on cause and effect, turning points, obstacles, stakes, consequences, and story progression. Ask about what could go wrong, what choices characters face, what's at stake.`,
-    worldbuilding: `\n\nFor WORLDBUILDING mode: Focus on the rules, culture, history, and unique aspects of locations, items, or systems. Ask about sensory details, social dynamics, how things work, what makes them unique.`,
-    dialogue: `\n\nFor DIALOGUE mode: Create scenarios that reveal character voice and relationships through conversation. Ask the author to write dialogue that shows subtext, conflict, or character dynamics.`,
-    conflict_theme: `\n\nFor CONFLICT & THEME mode: Focus on moral dilemmas, thematic questions, values, and what the story is ultimately about. Ask about gray areas, hard choices, and what the character stands for.`,
-    general: `\n\nFor GENERAL mode: Balance all aspects - character, plot, world, and theme. Ask questions that connect different story elements or reveal unexpected dimensions.`,
+    general: `\n\nFor GENERAL mode: Ask simple, specific questions about any story element that reveal concrete details. Examples:
+- "What's one physical trait that makes [Character] immediately recognizable?"
+- "What's the most common sound heard in [Location]?"
+- "What does [Item] smell like?"
+- "What time of day does [Event] typically happen?"
+Keep it simple, specific, and answerable quickly.`,
+    
+    character_deep_dive: `\n\nFor CHARACTER mode: Ask focused questions about personality, habits, or relationships. Examples:
+- "What's one thing [Character] always carries with them, and why?"
+- "How does [Character] react when someone disagrees with them?"
+- "What's [Character]'s go-to comfort food?"
+Keep it personal but not too deep - one detail at a time.`,
+    
+    plot_development: `\n\nFor PLOT mode: Ask about specific events, obstacles, or consequences. Examples:
+- "What's the first thing that goes wrong in [Plot Point]?"
+- "Who has the most to lose if [Event] fails?"
+- "What does [Character] notice first when [Plot Point] begins?"
+Focus on concrete moments, not entire story arcs.`,
+    
+    worldbuilding: `\n\nFor WORLDBUILDING mode: Ask about sensory details or practical aspects. Examples:
+- "What's the weather like in [Location] most of the year?"
+- "What material is [Item] made from?"
+- "What do locals call [Location] in everyday conversation?"
+Keep it grounded in specifics, not world systems.`,
+    
+    dialogue: `\n\nFor DIALOGUE mode: Ask for a single line or brief exchange that reveals character. Examples:
+- "What's one phrase [Character] says when they're nervous?"
+- "How would [Character] greet an old friend?"
+- "What would [Character] say if interrupted while working?"
+Just a quick line or two, not a full scene.`,
+    
+    conflict_theme: `\n\nFor CONFLICT & THEME mode: Ask about specific values or choices. Examples:
+- "What rule would [Character] break if pushed far enough?"
+- "What does [Character] value more: truth or kindness?"
+- "What line won't [Character] cross, even for someone they love?"
+One clear choice or value, not philosophical essays.`,
   };
 
   return basePrompt + (modeSpecifics[mode] || modeSpecifics.general);
@@ -153,4 +182,37 @@ function buildUserPrompt(
   prompt += `\nGenerate ONE specific, thought-provoking question that helps the author develop these story elements further. Reference the element by name in your question.`;
 
   return prompt;
+}
+
+export function getAvailableModes(elements: StoryElement[]): string[] {
+  const modes = ['general']; // General is always available
+  
+  const elementTypes = new Set(elements.map(el => el.element_type));
+  
+  // Character Deep Dive: requires at least one character
+  if (elementTypes.has('character')) {
+    modes.push('character_deep_dive');
+  }
+  
+  // Plot Development: requires plot points or characters
+  if (elementTypes.has('plot_point') || elementTypes.has('character')) {
+    modes.push('plot_development');
+  }
+  
+  // Worldbuilding: requires locations, items, or themes
+  if (elementTypes.has('location') || elementTypes.has('item') || elementTypes.has('theme')) {
+    modes.push('worldbuilding');
+  }
+  
+  // Dialogue: requires characters
+  if (elementTypes.has('character')) {
+    modes.push('dialogue');
+  }
+  
+  // Conflict & Theme: requires characters or themes
+  if (elementTypes.has('character') || elementTypes.has('theme') || elementTypes.has('plot_point')) {
+    modes.push('conflict_theme');
+  }
+  
+  return modes;
 }
