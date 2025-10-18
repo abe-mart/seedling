@@ -35,7 +35,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedElement, setSelectedElement] = useState<StoryElement | null>(null);
   const [showModal, setShowModal] = useState<'series' | 'book' | 'element' | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [formData, setFormData] = useState({ title: '', description: '', elementType: 'character' as const });
 
   useEffect(() => {
@@ -143,13 +143,16 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
   };
 
   const handleDeleteBook = async () => {
-    if (!selectedBook) return;
+    if (!bookToDelete) return;
 
     try {
-      await api.books.delete(selectedBook.id);
-      setShowDeleteConfirm(false);
-      setSelectedBook(null);
-      setSelectedElement(null);
+      await api.books.delete(bookToDelete.id);
+      setBookToDelete(null);
+      // If the deleted book was selected, clear selection
+      if (selectedBook?.id === bookToDelete.id) {
+        setSelectedBook(null);
+        setSelectedElement(null);
+      }
       loadProjects();
     } catch (error) {
       console.error('Error deleting book:', error);
@@ -223,34 +226,50 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
 
               <div className="space-y-2">
                 {books.map((book) => (
-                  <button
+                  <div
                     key={book.id}
-                    onClick={() => {
-                      setSelectedBook(book);
-                      setSelectedElement(null); // Clear selected element when switching stories
-                    }}
-                    className={`w-full text-left p-4 rounded-lg transition-colors ${
+                    className={`relative group rounded-lg transition-colors ${
                       selectedBook?.id === book.id
                         ? 'bg-slate-900 text-white'
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <BookOpen className="w-5 h-5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate">{book.title}</div>
-                        {book.description && (
-                          <div
-                            className={`text-sm truncate ${
-                              selectedBook?.id === book.id ? 'text-slate-300' : 'text-slate-600'
-                            }`}
-                          >
-                            {book.description}
-                          </div>
-                        )}
+                    <button
+                      onClick={() => {
+                        setSelectedBook(book);
+                        setSelectedElement(null); // Clear selected element when switching stories
+                      }}
+                      className="w-full text-left p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <BookOpen className="w-5 h-5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold truncate">{book.title}</div>
+                          {book.description && (
+                            <div
+                              className={`text-sm truncate ${
+                                selectedBook?.id === book.id ? 'text-slate-300' : 'text-slate-600'
+                              }`}
+                            >
+                              {book.description}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBookToDelete(book);
+                      }}
+                      className={`absolute top-2 right-2 p-1.5 hover:bg-red-50 text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 ${
+                        selectedBook?.id === book.id ? 'hover:bg-red-900/20' : ''
+                      }`}
+                      title="Delete story"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 ))}
 
                 {books.length === 0 && (
@@ -273,22 +292,13 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
                       <p className="text-slate-600 mt-1">{selectedBook.description}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                      title="Delete story"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => setShowModal('element')}
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add Element
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setShowModal('element')}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Element
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -436,7 +446,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
         </div>
       )}
       
-      {showDeleteConfirm && selectedBook && (
+      {bookToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <div className="flex items-start gap-4 mb-4">
@@ -446,7 +456,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
               <div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Story?</h3>
                 <p className="text-slate-600">
-                  Are you sure you want to delete <span className="font-semibold">"{selectedBook.title}"</span>? 
+                  Are you sure you want to delete <span className="font-semibold">"{bookToDelete.title}"</span>? 
                   This will permanently delete the story and all of its elements. This action cannot be undone.
                 </p>
               </div>
@@ -454,7 +464,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
             
             <div className="flex gap-3">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
+                onClick={() => setBookToDelete(null)}
                 className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Cancel

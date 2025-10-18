@@ -34,10 +34,22 @@ app.all('/api/auth/*', toNodeHandler(auth));
 
 app.get('/api/profile', requireAuth, async (req, res) => {
   try {
-    const result = await pool.query(
+    let result = await pool.query(
       'SELECT * FROM profiles WHERE user_id = $1',
       [req.user.id]
     );
+    
+    // If profile doesn't exist, create it with user's name from Better Auth
+    if (result.rows.length === 0) {
+      const insertResult = await pool.query(
+        `INSERT INTO profiles (user_id, email, display_name)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [req.user.id, req.user.email, req.user.name || req.user.email.split('@')[0]]
+      );
+      result = insertResult;
+    }
+    
     res.json(result.rows[0] || null);
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -48,9 +60,29 @@ app.get('/api/profile', requireAuth, async (req, res) => {
 app.put('/api/profile', requireAuth, async (req, res) => {
   const { display_name, timezone, preferred_genres, writing_frequency } = req.body;
   try {
+    // First ensure profile exists
+    let existingProfile = await pool.query(
+      'SELECT * FROM profiles WHERE user_id = $1',
+      [req.user.id]
+    );
+    
+    // Create profile if it doesn't exist
+    if (existingProfile.rows.length === 0) {
+      await pool.query(
+        `INSERT INTO profiles (user_id, email, display_name)
+         VALUES ($1, $2, $3)`,
+        [req.user.id, req.user.email, req.user.name || req.user.email.split('@')[0]]
+      );
+    }
+    
+    // Now update the profile
     const result = await pool.query(
       `UPDATE profiles 
-       SET display_name = $1, timezone = $2, preferred_genres = $3, writing_frequency = $4, updated_at = NOW()
+       SET display_name = COALESCE($1, display_name), 
+           timezone = COALESCE($2, timezone), 
+           preferred_genres = COALESCE($3, preferred_genres), 
+           writing_frequency = COALESCE($4, writing_frequency), 
+           updated_at = NOW()
        WHERE user_id = $5
        RETURNING *`,
       [display_name, timezone, preferred_genres, writing_frequency, req.user.id]
