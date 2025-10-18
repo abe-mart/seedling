@@ -1,22 +1,13 @@
 /*
-  # PostgreSQL-Only Schema (Without Supabase)
+  # PostgreSQL-Only Schema (Single User)
   
-  This is a simplified version for direct PostgreSQL use without Supabase.
-  Note: You'll need to implement your own authentication system.
+  Simplified schema for a single-user writing app.
+  No authentication required - everything belongs to one user.
 */
 
--- Create a simple users table (replaces Supabase auth.users)
-CREATE TABLE IF NOT EXISTS users (
+-- Create profiles table (single user profile)
+CREATE TABLE IF NOT EXISTS profile (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text UNIQUE NOT NULL,
-  password_hash text NOT NULL, -- You'll need to hash passwords in your app
-  created_at timestamptz DEFAULT now()
-);
-
--- Create profiles table
-CREATE TABLE IF NOT EXISTS profiles (
-  id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  email text UNIQUE NOT NULL,
   display_name text,
   timezone text DEFAULT 'UTC',
   preferred_genres text[] DEFAULT '{}',
@@ -31,7 +22,6 @@ CREATE TABLE IF NOT EXISTS profiles (
 -- Create series table
 CREATE TABLE IF NOT EXISTS series (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title text NOT NULL,
   description text,
   created_at timestamptz DEFAULT now(),
@@ -42,7 +32,6 @@ CREATE TABLE IF NOT EXISTS series (
 CREATE TABLE IF NOT EXISTS books (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   series_id uuid REFERENCES series(id) ON DELETE CASCADE,
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title text NOT NULL,
   description text,
   created_at timestamptz DEFAULT now(),
@@ -53,7 +42,6 @@ CREATE TABLE IF NOT EXISTS books (
 CREATE TABLE IF NOT EXISTS story_elements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   book_id uuid REFERENCES books(id) ON DELETE CASCADE,
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   element_type text NOT NULL CHECK (element_type IN ('character', 'location', 'plot_point', 'item', 'theme')),
   name text NOT NULL,
   description text,
@@ -66,7 +54,6 @@ CREATE TABLE IF NOT EXISTS story_elements (
 -- Create prompts table
 CREATE TABLE IF NOT EXISTS prompts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   book_id uuid REFERENCES books(id) ON DELETE SET NULL,
   prompt_text text NOT NULL,
   prompt_type text NOT NULL CHECK (prompt_type IN ('character_deep_dive', 'plot_development', 'worldbuilding', 'dialogue', 'conflict_theme', 'general')),
@@ -80,7 +67,6 @@ CREATE TABLE IF NOT EXISTS prompts (
 CREATE TABLE IF NOT EXISTS responses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   prompt_id uuid REFERENCES prompts(id) ON DELETE CASCADE NOT NULL,
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   response_text text NOT NULL,
   element_tags uuid[],
   word_count integer DEFAULT 0,
@@ -91,7 +77,7 @@ CREATE TABLE IF NOT EXISTS responses (
 
 -- Create user_settings table
 CREATE TABLE IF NOT EXISTS user_settings (
-  user_id uuid PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   default_prompt_mode text,
   daily_reminder_enabled boolean DEFAULT false,
   reminder_time time,
@@ -101,16 +87,11 @@ CREATE TABLE IF NOT EXISTS user_settings (
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_series_user_id ON series(user_id);
-CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
 CREATE INDEX IF NOT EXISTS idx_books_series_id ON books(series_id);
-CREATE INDEX IF NOT EXISTS idx_story_elements_user_id ON story_elements(user_id);
 CREATE INDEX IF NOT EXISTS idx_story_elements_book_id ON story_elements(book_id);
 CREATE INDEX IF NOT EXISTS idx_story_elements_type ON story_elements(element_type);
-CREATE INDEX IF NOT EXISTS idx_prompts_user_id ON prompts(user_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_book_id ON prompts(book_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_type ON prompts(prompt_type);
-CREATE INDEX IF NOT EXISTS idx_responses_user_id ON responses(user_id);
 CREATE INDEX IF NOT EXISTS idx_responses_prompt_id ON responses(prompt_id);
 CREATE INDEX IF NOT EXISTS idx_responses_completed ON responses(completed_at);
 
@@ -124,7 +105,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Add triggers for updated_at
-CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
+CREATE TRIGGER update_profile_updated_at BEFORE UPDATE ON profile
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_series_updated_at BEFORE UPDATE ON series
@@ -142,5 +123,10 @@ CREATE TRIGGER update_responses_updated_at BEFORE UPDATE ON responses
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Note: This schema does NOT include Row Level Security (RLS) policies
--- You'll need to implement authentication and authorization in your application code
+-- Insert default profile and settings for single user
+INSERT INTO profile (id, display_name) VALUES (gen_random_uuid(), 'Writer') ON CONFLICT DO NOTHING;
+INSERT INTO user_settings (id) VALUES (gen_random_uuid()) ON CONFLICT DO NOTHING;
+
+-- Grant permissions to seedling_user
+GRANT ALL ON ALL TABLES IN SCHEMA public TO seedling_user;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO seedling_user;

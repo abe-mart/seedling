@@ -1,8 +1,9 @@
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 
 function AppContent() {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -12,7 +13,10 @@ function AppContent() {
     );
   }
 
-  // Single user app - go straight to dashboard
+  if (!user) {
+    return <Auth />;
+  }
+
   return <Dashboard />;
 }
 

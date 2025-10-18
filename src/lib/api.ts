@@ -1,36 +1,12 @@
-// Simple API client for PostgreSQL backend
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006';
+// Simple API client for single-user PostgreSQL backend
+const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3006';
 
 class ApiClient {
-  private token: string | null = null;
-
-  constructor() {
-    // Load token from localStorage
-    this.token = localStorage.getItem('auth_token');
-  }
-
-  setToken(token: string | null) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('auth_token', token);
-    } else {
-      localStorage.removeItem('auth_token');
-    }
-  }
-
-  getToken() {
-    return this.token;
-  }
-
   private async request(endpoint: string, options: RequestInit = {}) {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string> || {}),
     };
-
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
 
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
@@ -45,33 +21,6 @@ class ApiClient {
     return response.json();
   }
 
-  // Auth endpoints
-  async signUp(email: string, password: string, displayName?: string) {
-    const data = await this.request('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, displayName }),
-    });
-    this.setToken(data.token);
-    return data;
-  }
-
-  async signIn(email: string, password: string) {
-    const data = await this.request('/auth/signin', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    this.setToken(data.token);
-    return data;
-  }
-
-  async getUser() {
-    return this.request('/auth/user');
-  }
-
-  signOut() {
-    this.setToken(null);
-  }
-
   // Profile endpoints
   async getProfile() {
     return this.request('/profile');
@@ -79,6 +28,18 @@ class ApiClient {
 
   async updateProfile(data: any) {
     return this.request('/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Settings endpoints
+  async getSettings() {
+    return this.request('/settings');
+  }
+
+  async updateSettings(data: any) {
+    return this.request('/settings', {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
