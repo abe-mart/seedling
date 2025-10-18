@@ -16,6 +16,8 @@ NC='\033[0m'
 DB_NAME="seedling"
 DB_USER="seedling_user"
 DB_PASSWORD=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MIGRATION_FILE="${SCRIPT_DIR}/supabase/migrations/20251017235241_create_initial_schema.sql"
 
 # Prompt for password
 read -sp "Enter password for database user '${DB_USER}': " DB_PASSWORD
@@ -51,7 +53,7 @@ fi
 
 # Create database and user
 echo -e "${GREEN}Creating database and user...${NC}"
-sudo -u postgres psql << EOF
+sudo -u postgres psql -v ON_ERROR_STOP=1 << EOF
 CREATE DATABASE $DB_NAME;
 CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
@@ -64,12 +66,24 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;
 EOF
 
 # Apply migrations
-if [ -f "supabase/migrations/20251017235241_create_initial_schema.sql" ]; then
+if [ -f "$MIGRATION_FILE" ]; then
     echo -e "${GREEN}Applying database migrations...${NC}"
-    sudo -u postgres psql -d $DB_NAME -f supabase/migrations/20251017235241_create_initial_schema.sql
+    # Copy migration file to temp location that postgres user can access
+    TEMP_MIGRATION="/tmp/seedling_migration_$(date +%s).sql"
+    cp "$MIGRATION_FILE" "$TEMP_MIGRATION"
+    chmod 644 "$TEMP_MIGRATION"
+    
+    # Apply migration
+    sudo -u postgres psql -d "$DB_NAME" -f "$TEMP_MIGRATION"
+    
+    # Clean up temp file
+    rm -f "$TEMP_MIGRATION"
+    
     echo -e "${GREEN}✅ Migrations applied successfully${NC}"
 else
-    echo -e "${YELLOW}Warning: Migration file not found${NC}"
+    echo -e "${YELLOW}Warning: Migration file not found at: $MIGRATION_FILE${NC}"
+    echo -e "${YELLOW}You can apply it manually later with:${NC}"
+    echo -e "  sudo -u postgres psql -d $DB_NAME -f supabase/migrations/20251017235241_create_initial_schema.sql"
 fi
 
 echo ""
