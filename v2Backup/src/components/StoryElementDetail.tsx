@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Calendar, MessageSquare, Lightbulb, Edit3 } from 'lucide-react';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
 
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
@@ -34,29 +34,28 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
   const loadRelatedPrompts = async () => {
     setLoading(true);
     
-    try {
-      // Load all prompts and filter client-side for element references
-      const allPrompts = await api.prompts.list({});
-      const promptsData = allPrompts.filter((prompt: Prompt) => 
-        prompt.element_references && prompt.element_references.includes(element.id)
-      );
+    // Load prompts that reference this element
+    const { data: promptsData } = await supabase
+      .from('prompts')
+      .select('*')
+      .contains('element_references', [element.id])
+      .order('generated_at', { ascending: false });
 
-      if (promptsData && promptsData.length > 0) {
-        // Load responses for these prompts
-        const responsesData = await Promise.all(
-          promptsData.map((prompt: Prompt) => api.responses.list(prompt.id))
-        );
+    if (promptsData) {
+      // Load responses for these prompts
+      const promptIds = promptsData.map(p => p.id);
+      const { data: responsesData } = await supabase
+        .from('responses')
+        .select('*')
+        .in('prompt_id', promptIds);
 
-        // Combine prompts with their responses
-        const promptsWithResponses = promptsData.map((prompt: Prompt) => ({
-          ...prompt,
-          response: responsesData.flat().find((r: Response) => r.prompt_id === prompt.id) || null,
-        }));
+      // Combine prompts with their responses
+      const promptsWithResponses = promptsData.map(prompt => ({
+        ...prompt,
+        response: responsesData?.find(r => r.prompt_id === prompt.id) || null,
+      }));
 
-        setRelatedPrompts(promptsWithResponses);
-      }
-    } catch (error) {
-      console.error('Error loading related prompts:', error);
+      setRelatedPrompts(promptsWithResponses);
     }
     
     setLoading(false);
@@ -65,17 +64,19 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
   const handleSave = async () => {
     setSaving(true);
     
-    try {
-      await api.elements.update(element.id, {
+    const { error } = await supabase
+      .from('story_elements')
+      .update({
         name,
         description,
         notes,
-      });
-      
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', element.id);
+
+    if (!error) {
       setIsEditing(false);
       onUpdate();
-    } catch (error) {
-      console.error('Error saving element:', error);
     }
     
     setSaving(false);

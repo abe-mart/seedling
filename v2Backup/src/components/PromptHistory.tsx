@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag } from 'lucide-react';
 import { Database } from '../lib/database.types';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 type Prompt = Database['public']['Tables']['prompts']['Row'];
 type Response = Database['public']['Tables']['responses']['Row'];
@@ -46,36 +46,24 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
   }, [prompts]);
 
   const loadElements = async () => {
-    // Collect all unique element IDs and book IDs from all prompts
+    // Collect all unique element IDs from all prompts
     const elementIds = new Set<string>();
-    const bookIds = new Set<string>();
     prompts.forEach(prompt => {
       prompt.element_references?.forEach(id => elementIds.add(id));
-      if (prompt.book_id) bookIds.add(prompt.book_id);
     });
 
     if (elementIds.size === 0) return;
 
-    try {
-      // Load elements from all referenced books
-      const elementPromises = Array.from(bookIds).map(bookId => 
-        api.elements.list(bookId)
-      );
-      const elementArrays = await Promise.all(elementPromises);
-      const allElements = elementArrays.flat();
-      
-      // Filter for only referenced elements
-      const data = allElements.filter((element: StoryElement) => 
-        elementIds.has(element.id)
-      );
+    // Load all referenced elements
+    const { data } = await supabase
+      .from('story_elements')
+      .select('*')
+      .in('id', Array.from(elementIds));
 
-      if (data) {
-        const map = new Map<string, StoryElement>();
-        data.forEach((element: StoryElement) => map.set(element.id, element));
-        setElementMap(map);
-      }
-    } catch (error) {
-      console.error('Error loading elements:', error);
+    if (data) {
+      const map = new Map<string, StoryElement>();
+      data.forEach(element => map.set(element.id, element));
+      setElementMap(map);
     }
   };
 
@@ -88,42 +76,37 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
 
     if (bookIds.size === 0) return;
 
-    try {
-      // Load all books
-      const allBooks = await api.books.list();
-      const data = allBooks.filter((book: Book) => bookIds.has(book.id));
+    // Load all referenced books
+    const { data } = await supabase
+      .from('books')
+      .select('*')
+      .in('id', Array.from(bookIds));
 
-      if (data) {
-        const map = new Map<string, Book>();
-        data.forEach((book: Book) => map.set(book.id, book));
-        setBookMap(map);
-      }
-    } catch (error) {
-      console.error('Error loading books:', error);
+    if (data) {
+      const map = new Map<string, Book>();
+      data.forEach(book => map.set(book.id, book));
+      setBookMap(map);
     }
   };
 
   const loadResponses = async () => {
     if (prompts.length === 0) return;
 
-    try {
-      // Load all responses for all prompts
-      const promptIds = prompts.map(p => p.id);
-      const responseArrays = await Promise.all(
-        promptIds.map(id => api.responses.list(id))
-      );
-      const data = responseArrays.flat();
+    // Load all responses for all prompts
+    const promptIds = prompts.map(p => p.id);
+    const { data } = await supabase
+      .from('responses')
+      .select('*')
+      .in('prompt_id', promptIds)
+      .order('created_at', { ascending: false });
 
-      if (data) {
-        const map = new Map<string, Response[]>();
-        data.forEach((response: Response) => {
-          const existing = map.get(response.prompt_id) || [];
-          map.set(response.prompt_id, [...existing, response]);
-        });
-        setResponseMap(map);
-      }
-    } catch (error) {
-      console.error('Error loading responses:', error);
+    if (data) {
+      const map = new Map<string, Response[]>();
+      data.forEach(response => {
+        const existing = map.get(response.prompt_id) || [];
+        map.set(response.prompt_id, [...existing, response]);
+      });
+      setResponseMap(map);
     }
   };
 

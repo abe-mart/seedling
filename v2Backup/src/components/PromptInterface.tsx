@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
+import { generateAIPrompt, getAvailableModes } from '../lib/openai';
 import {
   ArrowLeft,
   Sparkles,
@@ -50,34 +51,6 @@ const PROMPT_TYPE_COLORS: Record<string, { bg: string; text: string; border: str
   conflict_theme: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
   general: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
 };
-
-// Helper function to determine available modes based on elements
-function getAvailableModes(elements: StoryElement[]): string[] {
-  const modes = ['general'];
-  const elementTypes = new Set(elements.map(el => el.element_type));
-  
-  if (elementTypes.has('character')) {
-    modes.push('character_deep_dive');
-  }
-  
-  if (elementTypes.has('plot_point') || elementTypes.has('character')) {
-    modes.push('plot_development');
-  }
-  
-  if (elementTypes.has('location') || elementTypes.has('item') || elementTypes.has('theme')) {
-    modes.push('worldbuilding');
-  }
-  
-  if (elementTypes.has('character')) {
-    modes.push('dialogue');
-  }
-  
-  if (elementTypes.has('theme') || elementTypes.has('character') || elementTypes.has('plot_point')) {
-    modes.push('conflict_theme');
-  }
-  
-  return modes;
-}
 
 export default function PromptInterface({ onBack, onRefresh }: PromptInterfaceProps) {
   const { user } = useAuth();
@@ -128,49 +101,62 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
   const loadBooks = async () => {
     if (!user) return;
     
-    try {
-      // Get most recent book (by last prompt generated)
-      const recentPrompts = await api.prompts.list({ limit: 1 });
-      const recentPrompt = recentPrompts[0];
+    // Get most recent book (by last prompt generated)
+    const { data: recentPrompt } = await supabase
+      .from('prompts')
+      .select('book_id')
+      .eq('user_id', user.id)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-      const data = await api.books.list();
+    const { data } = await supabase
+      .from('books')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
       
+    if (data) {
       setBooks(data);
       if (data.length > 0 && !selectedBook) {
         // Default to most recently prompted book, or first book if no prompts yet
         const defaultBook = recentPrompt?.book_id 
-          ? data.find((b: Book) => b.id === recentPrompt.book_id)?.id || data[0].id
+          ? data.find(b => b.id === recentPrompt.book_id)?.id || data[0].id
           : data[0].id;
         setSelectedBook(defaultBook);
       }
-    } catch (error) {
-      console.error('Error loading books:', error);
     }
   };
 
   const loadElements = async (bookId: string) => {
-    try {
-      const data = await api.elements.list(bookId);
-      setElements(data);
-    } catch (error) {
-      console.error('Error loading elements:', error);
-    }
+    const { data } = await supabase
+      .from('story_elements')
+      .select('*')
+      .eq('book_id', bookId)
+      .order('created_at', { ascending: false });
+    if (data) setElements(data);
   };
 
   const loadPromptHistory = async () => {
     if (!user) return;
-    try {
-      const prompts = await api.prompts.list({ limit: 20 });
+    const { data: prompts } = await supabase
+      .from('prompts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('generated_at', { ascending: false })
+      .limit(20);
 
+    if (prompts) {
       const promptsWithResponses = await Promise.all(
-        prompts.map(async (prompt: Prompt) => {
-          const responses = await api.responses.list(prompt.id);
+        prompts.map(async (prompt) => {
+          const { data: responses } = await supabase
+            .from('responses')
+            .select('*')
+            .eq('prompt_id', prompt.id);
           return { ...prompt, responses: responses || [] };
         })
       );
       setPromptHistory(promptsWithResponses);
-    } catch (error) {
-      console.error('Error loading prompt history:', error);
     }
   };
 
@@ -179,19 +165,48 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
     setLoading(true);
     try {
-      // Get selected book details from state
-      const bookData = books.find((b) => b.id === selectedBook);
+      // Get selected book details
+      const { data: bookData } = await supabase
+        .from('books')
+        .select('*')
+        .eq('id', selectedBook)
+        .single();
+
       if (!bookData) throw new Error('Book not found');
 
       // Get selected or determine which elements to use
       const selectedElements = elements.filter((el) => selectedTags.includes(el.id));
       
-      // For now, simplified without loading full history
-      // You can expand this if needed
-      const elementHistory: any[] = [];
+      // Load history for the selected elements (or all if none selected)
+      const elementsForHistory = selectedElements.length > 0 ? selectedElements : elements;
+      const elementHistory = await Promise.all(
+        elementsForHistory.slice(0, 5).map(async (element) => {
+          const { data: prompts } = await supabase
+            .from('prompts')
+            .select('*')
+            .contains('element_references', [element.id])
+            .order('generated_at', { ascending: false })
+            .limit(3);
 
-      // Generate AI prompt via backend
-      const result = await api.ai.generatePrompt({
+          if (!prompts) return { element, prompts: [] };
+
+          const promptsWithResponses = await Promise.all(
+            prompts.map(async (prompt) => {
+              const { data: responses } = await supabase
+                .from('responses')
+                .select('*')
+                .eq('prompt_id', prompt.id)
+                .limit(1);
+              return { ...prompt, responses: responses || [] };
+            })
+          );
+
+          return { element, prompts: promptsWithResponses };
+        })
+      );
+
+      // Generate AI prompt
+      const aiPromptText = await generateAIPrompt({
         promptMode: selectedMode,
         storyContext: {
           bookTitle: bookData.title,
@@ -201,8 +216,6 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
         availableElements: elements,
         elementHistory: elementHistory,
       });
-      
-      const aiPromptText = result.prompt;
 
       // Determine which elements were actually referenced in the generated prompt
       let finalElementReferences = selectedTags;
@@ -252,38 +265,41 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
   const updateStreak = async () => {
     if (!user) return;
 
-    try {
-      const profile = await api.profile.get();
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('current_streak, longest_streak, last_prompt_date')
+      .eq('id', user.id)
+      .maybeSingle();
 
-      if (profile) {
-        const today = new Date().toISOString().split('T')[0];
-        const lastDate = profile.last_prompt_date;
-        let newStreak = profile.current_streak;
+    if (profile) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastDate = profile.last_prompt_date;
+      let newStreak = profile.current_streak;
 
-        if (lastDate !== today) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
+      if (lastDate !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-          if (lastDate === yesterdayStr) {
-            newStreak += 1;
-          } else {
-            newStreak = 1;
-          }
+        if (lastDate === yesterdayStr) {
+          newStreak += 1;
+        } else {
+          newStreak = 1;
+        }
 
-          const longestStreak = Math.max(newStreak, profile.longest_streak);
+        const longestStreak = Math.max(newStreak, profile.longest_streak);
 
-          await api.profile.update({
+        await supabase
+          .from('profiles')
+          .update({
             current_streak: newStreak,
             longest_streak: longestStreak,
             last_prompt_date: today,
-          });
+          })
+          .eq('id', user.id);
 
-          onRefresh();
-        }
+        onRefresh();
       }
-    } catch (error) {
-      console.error('Error updating streak:', error);
     }
   };
 
@@ -295,26 +311,29 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
     const wordCount = responseText.trim().split(/\s+/).length;
 
-    try {
-      const responses = await api.responses.list(currentPrompt.id);
-      const existingResponse = responses[0];
+    const { data: existingResponse } = await supabase
+      .from('responses')
+      .select('id')
+      .eq('prompt_id', currentPrompt.id)
+      .maybeSingle();
 
-      if (existingResponse) {
-        await api.responses.update(existingResponse.id, {
+    if (existingResponse) {
+      await supabase
+        .from('responses')
+        .update({
           response_text: responseText,
           word_count: wordCount,
           element_tags: selectedTags,
-        });
-      } else {
-        await api.responses.create({
-          prompt_id: currentPrompt.id,
-          response_text: responseText,
-          word_count: wordCount,
-          element_tags: selectedTags,
-        });
-      }
-    } catch (error) {
-      console.error('Error auto-saving response:', error);
+        })
+        .eq('id', existingResponse.id);
+    } else {
+      await supabase.from('responses').insert({
+        prompt_id: currentPrompt.id,
+        user_id: user.id,
+        response_text: responseText,
+        word_count: wordCount,
+        element_tags: selectedTags,
+      });
     }
   };
 
@@ -327,13 +346,22 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
 
       // If this is a temporary prompt (not yet saved to database), save it now
       if (currentPrompt.id.toString().startsWith('temp-')) {
-        const savedPrompt = await api.prompts.create({
-          book_id: currentPrompt.book_id!,
-          prompt_text: generatedPromptText,
-          prompt_type: selectedMode as any,
-          prompt_mode: selectedMode,
-          element_references: generatedElementRefs,
-        });
+        const { data: savedPrompt, error } = await supabase
+          .from('prompts')
+          .insert({
+            user_id: user.id,
+            book_id: currentPrompt.book_id,
+            prompt_text: generatedPromptText,
+            prompt_type: selectedMode as any,
+            prompt_mode: selectedMode,
+            element_references: generatedElementRefs,
+          })
+          .select()
+          .single();
+
+        if (error || !savedPrompt) {
+          throw new Error('Failed to save prompt');
+        }
 
         savedPromptId = savedPrompt.id;
         // Update the current prompt with the real saved data
@@ -343,18 +371,25 @@ export default function PromptInterface({ onBack, onRefresh }: PromptInterfacePr
       // Now save the response with the real prompt ID
       const wordCount = responseText.trim().split(/\s+/).length;
 
-      const responses = await api.responses.list(savedPromptId);
-      const existingResponse = responses[0];
+      const { data: existingResponse } = await supabase
+        .from('responses')
+        .select('id')
+        .eq('prompt_id', savedPromptId)
+        .maybeSingle();
 
       if (existingResponse) {
-        await api.responses.update(existingResponse.id, {
-          response_text: responseText,
-          word_count: wordCount,
-          element_tags: generatedElementRefs,
-        });
+        await supabase
+          .from('responses')
+          .update({
+            response_text: responseText,
+            word_count: wordCount,
+            element_tags: generatedElementRefs,
+          })
+          .eq('id', existingResponse.id);
       } else {
-        await api.responses.create({
+        await supabase.from('responses').insert({
           prompt_id: savedPromptId,
+          user_id: user.id,
           response_text: responseText,
           word_count: wordCount,
           element_tags: generatedElementRefs,

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
 import { Flame, BookOpen, LogOut, Plus, Lightbulb, User, Check, X, Sprout } from 'lucide-react';
 import PromptInterface from './PromptInterface';
@@ -51,21 +51,21 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     if (!user) return;
 
-    try {
-      const [profileData, booksData, promptsData] = await Promise.all([
-        api.profile.get(),
-        api.books.list(),
-        api.prompts.list({ limit: 5 }),
-      ]);
+    const [profileData, booksData, promptsData] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+      supabase.from('books').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase
+        .from('prompts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('generated_at', { ascending: false })
+        .limit(5),
+    ]);
 
-      setProfile(profileData);
-      setBooks(booksData);
-      setRecentPrompts(promptsData);
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
+    if (profileData.data) setProfile(profileData.data);
+    if (booksData.data) setBooks(booksData.data);
+    if (promptsData.data) setRecentPrompts(promptsData.data);
+    setLoading(false);
   };
 
   const handleSignOut = async () => {
@@ -81,15 +81,16 @@ export default function Dashboard() {
     if (!user || !displayNameValue.trim()) return;
 
     setSavingDisplayName(true);
-    try {
-      await api.profile.update({ display_name: displayNameValue.trim() });
+    const { error } = await supabase
+      .from('profiles')
+      .update({ display_name: displayNameValue.trim() })
+      .eq('id', user.id);
+
+    if (!error) {
       setProfile(prev => prev ? { ...prev, display_name: displayNameValue.trim() } : null);
       setEditingDisplayName(false);
-    } catch (error) {
-      console.error('Error saving display name:', error);
-    } finally {
-      setSavingDisplayName(false);
     }
+    setSavingDisplayName(false);
   };
 
   const handleCancelEditingDisplayName = () => {
@@ -101,14 +102,14 @@ export default function Dashboard() {
     if (!user) return;
     
     setLoadingHistory(true);
-    try {
-      const data = await api.prompts.list();
-      setAllPrompts(data);
-    } catch (error) {
-      console.error('Error loading prompts:', error);
-    } finally {
-      setLoadingHistory(false);
-    }
+    const { data } = await supabase
+      .from('prompts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('generated_at', { ascending: false });
+    
+    if (data) setAllPrompts(data);
+    setLoadingHistory(false);
   };
 
   const handleViewHistory = () => {

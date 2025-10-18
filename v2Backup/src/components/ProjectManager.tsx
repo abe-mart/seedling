@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
 import {
   ArrowLeft,
@@ -68,76 +68,70 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
   const loadProjects = async () => {
     if (!user) return;
 
-    try {
-      const [seriesData, booksData] = await Promise.all([
-        api.series.list(),
-        api.books.list(),
-      ]);
+    const [seriesData, booksData] = await Promise.all([
+      supabase.from('series').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('books').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+    ]);
 
-      setSeries(seriesData);
-      setBooks(booksData);
-      // Only auto-select first book if there's no initialBookId and no book selected yet
-      if (booksData && booksData.length > 0 && !selectedBook && !initialBookId) {
-        setSelectedBook(booksData[0]);
-      }
-    } catch (error) {
-      console.error('Error loading projects:', error);
+    if (seriesData.data) setSeries(seriesData.data);
+    if (booksData.data) setBooks(booksData.data);
+    // Only auto-select first book if there's no initialBookId and no book selected yet
+    if (booksData.data && booksData.data.length > 0 && !selectedBook && !initialBookId) {
+      setSelectedBook(booksData.data[0]);
     }
   };
 
   const loadElements = async (bookId: string) => {
-    try {
-      const data = await api.elements.list(bookId);
-      setElements(data);
-    } catch (error) {
-      console.error('Error loading elements:', error);
-    }
+    const { data } = await supabase
+      .from('story_elements')
+      .select('*')
+      .eq('book_id', bookId)
+      .order('created_at', { ascending: false });
+
+    if (data) setElements(data);
   };
 
   const handleCreateBook = async () => {
     if (!user || !formData.title) return;
 
-    try {
-      await api.books.create({
-        title: formData.title,
-        description: formData.description,
-      });
+    const { error } = await supabase.from('books').insert({
+      user_id: user.id,
+      title: formData.title,
+      description: formData.description,
+    });
+
+    if (!error) {
       setShowModal(null);
       setFormData({ title: '', description: '', elementType: 'character' });
       loadProjects();
-    } catch (error) {
-      console.error('Error creating book:', error);
     }
   };
 
   const handleCreateElement = async () => {
     if (!user || !selectedBook || !formData.title) return;
 
-    try {
-      await api.elements.create({
-        book_id: selectedBook.id,
-        element_type: formData.elementType,
-        name: formData.title,
-        description: formData.description,
-      });
+    const { error } = await supabase.from('story_elements').insert({
+      book_id: selectedBook.id,
+      user_id: user.id,
+      element_type: formData.elementType,
+      name: formData.title,
+      description: formData.description,
+    });
+
+    if (!error) {
       setShowModal(null);
       setFormData({ title: '', description: '', elementType: 'character' });
       loadElements(selectedBook.id);
-    } catch (error) {
-      console.error('Error creating element:', error);
     }
   };
 
   const handleDeleteElement = async (elementId: string) => {
     if (!confirm('Are you sure you want to delete this element?')) return;
 
-    try {
-      await api.elements.delete(elementId);
-      if (selectedBook) {
-        loadElements(selectedBook.id);
-      }
-    } catch (error) {
-      console.error('Error deleting element:', error);
+    const { error } = await supabase.from('story_elements').delete().eq('id', elementId);
+
+    if (!error && selectedBook) {
+      loadElements(selectedBook.id);
     }
   };
 

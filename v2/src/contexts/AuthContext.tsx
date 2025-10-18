@@ -1,13 +1,25 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { authClient } from '../lib/auth-client';
+import { api } from '../lib/api';
+
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+
+interface Session {
+  token: string;
+  userId: string;
+  expiresAt: Date;
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -19,64 +31,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      (async () => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          if (!existingProfile) {
-            await supabase.from('profiles').insert({
-              id: session.user.id,
-              email: session.user.email!,
-            });
-
-            await supabase.from('user_settings').insert({
-              user_id: session.user.id,
-            });
-          }
-        }
-      })();
-    });
-
-    return () => subscription.unsubscribe();
+    // Check for existing session on mount
+    checkSession();
   }, []);
 
+  const checkSession = async () => {
+    try {
+      const sessionData = await authClient.getSession();
+      if (sessionData) {
+        setSession(sessionData as any);
+        setUser(sessionData.user as any);
+        
+        // Create profile and settings if they don't exist
+        try {
+          await api.profile.get();
+        } catch (error) {
+          // Profile doesn't exist, will be created on backend or ignore
+          console.log('Profile check:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Session check error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          display_name: displayName,
-        },
-      },
-    });
-    return { error };
+    try {
+      await authClient.signUp.email({
+        email,
+        password,
+        name: displayName,
+      });
+      
+      // Refresh session after signup
+      await checkSession();
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      await authClient.signIn.email({
+        email,
+        password,
+      });
+      
+      // Refresh session after signin
+      await checkSession();
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await authClient.signOut();
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   return (
