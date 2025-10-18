@@ -1,19 +1,26 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { betterAuth } from 'better-auth';
 import { pool } from './db.js';
+
+console.log('🔐 Initializing Better Auth...');
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('BETTER_AUTH_SECRET exists:', !!process.env.BETTER_AUTH_SECRET);
 
 export const auth = betterAuth({
   database: {
     provider: 'postgres',
-    url: `postgresql://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASSWORD}@${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_NAME || 'seedling'}`
+    url: process.env.DATABASE_URL,
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Set to true if you want email verification
+    requireEmailVerification: false,
   },
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: [
     process.env.FRONTEND_URL || 'http://localhost:3000',
-    'http://localhost:5173', // Vite dev server
+    'http://localhost:5173',
   ],
 });
 

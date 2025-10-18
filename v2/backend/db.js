@@ -1,8 +1,13 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import pkg from 'pg';
 const { Pool } = pkg;
 
 // Database connection pool
 export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Fallback to individual env vars if DATABASE_URL not available
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'seedling',
