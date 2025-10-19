@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import { Database } from '../lib/database.types';
@@ -13,6 +13,7 @@ import {
   Flag,
   Trash2,
   X,
+  Search,
 } from 'lucide-react';
 import StoryElementDetail from './StoryElementDetail';
 import toast from 'react-hot-toast';
@@ -37,6 +38,10 @@ export default function ProjectManager() {
   const [formData, setFormData] = useState({ title: '', description: '', elementType: 'character' as const });
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [loadingElements, setLoadingElements] = useState(false);
+  
+  // Search and filter state
+  const [elementSearchQuery, setElementSearchQuery] = useState('');
+  const [elementTypeFilter, setElementTypeFilter] = useState<string>('all');
 
   useEffect(() => {
     loadProjects();
@@ -172,6 +177,35 @@ export default function ProjectManager() {
       toast.error('Failed to delete story');
     }
   };
+
+  // Filter elements based on search and type
+  const filteredElements = useMemo(() => {
+    return elements.filter(element => {
+      // Search filter
+      if (elementSearchQuery.trim()) {
+        const query = elementSearchQuery.toLowerCase();
+        const nameMatches = element.name?.toLowerCase().includes(query);
+        const descMatches = element.description?.toLowerCase().includes(query);
+        const notesMatch = element.notes?.toLowerCase().includes(query);
+        
+        if (!nameMatches && !descMatches && !notesMatch) {
+          return false;
+        }
+      }
+
+      // Type filter
+      if (elementTypeFilter !== 'all' && element.element_type !== elementTypeFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [elements, elementSearchQuery, elementTypeFilter]);
+
+  const elementTypes = useMemo(() => {
+    const types = new Set(elements.map(e => e.element_type));
+    return Array.from(types).sort();
+  }, [elements]);
 
   const getElementIcon = (type: string) => {
     switch (type) {
@@ -320,6 +354,43 @@ export default function ProjectManager() {
                   </button>
                 </div>
 
+                {/* Search and Filter for Elements */}
+                {elements.length > 0 && (
+                  <div className="mb-6 space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search elements..."
+                        value={elementSearchQuery}
+                        onChange={(e) => setElementSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={elementTypeFilter}
+                        onChange={(e) => setElementTypeFilter(e.target.value)}
+                        className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white text-sm"
+                      >
+                        <option value="all">All Types</option>
+                        {elementTypes.map(type => (
+                          <option key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {(elementSearchQuery || elementTypeFilter !== 'all') && (
+                        <span className="text-sm text-slate-600">
+                          {filteredElements.length} of {elements.length} elements
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {loadingElements ? (
                     <>
@@ -328,8 +399,8 @@ export default function ProjectManager() {
                       <SkeletonElementCard />
                       <SkeletonElementCard />
                     </>
-                  ) : elements.length > 0 ? (
-                    elements.map((element) => {
+                  ) : filteredElements.length > 0 ? (
+                    filteredElements.map((element) => {
                       const Icon = getElementIcon(element.element_type);
                       return (
                         <div
@@ -365,13 +436,30 @@ export default function ProjectManager() {
                         </div>
                       );
                     })
-                  ) : (
+                  ) : elements.length === 0 ? (
                     <div className="col-span-full text-center py-12">
                       <Lightbulb className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                       <h3 className="text-lg font-semibold text-slate-900 mb-2">No story elements yet</h3>
                       <p className="text-slate-600 mb-4">
                         Add characters, locations, and other elements to your story
                       </p>
+                    </div>
+                  ) : (
+                    <div className="col-span-full text-center py-12">
+                      <Search className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">No elements found</h3>
+                      <p className="text-slate-600 mb-4">
+                        Try adjusting your search or filter
+                      </p>
+                      <button
+                        onClick={() => {
+                          setElementSearchQuery('');
+                          setElementTypeFilter('all');
+                        }}
+                        className="text-slate-900 hover:text-slate-700 font-medium"
+                      >
+                        Clear filters
+                      </button>
                     </div>
                   )}
                 </div>

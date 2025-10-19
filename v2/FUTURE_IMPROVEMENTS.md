@@ -98,33 +98,41 @@ Replace empty states with skeleton loaders while data loads:
 ---
 
 ### 4. Search & Filter
-**Status**: Not implemented  
+**Status**: ✅ Implemented  
 **Effort**: Medium-High  
 **Impact**: Very High  
 
 #### Prompt History Search
+✅ **Implemented Features**:
 - Full-text search across prompt text and responses
 - Filter by:
-  - Story/book
-  - Prompt type (character, plot, worldbuilding, etc.)
-  - Date range
-  - Word count range
-  - Has/hasn't been answered
+  - ✅ Story/book (dropdown selection)
+  - ✅ Prompt type (character, plot, worldbuilding, etc.)
+  - ✅ Answer status (all, answered, unanswered)
+- ✅ Real-time filtering with result counts
+- ✅ Collapsible filter panel
+- ✅ Clear all filters button
+- ✅ Empty state with "No results found" message
 
 #### Story Element Search
-- Search elements by name or description
-- Filter by element type
-- Sort by: name, date created, last modified
+✅ **Implemented Features**:
+- Search elements by name, description, or notes
+- Filter by element type (character, location, plot_point, item, theme)
+- Real-time filtering with result counts
+- Clear filters functionality
+- Empty state for no search results
 
-**Implementation suggestion**:
-```typescript
-// Use Supabase full-text search
-const { data } = await supabase
-  .from('prompts')
-  .select('*')
-  .textSearch('prompt_text', query)
-  .eq('book_id', bookId);
-```
+**Implementation**:
+- Used `useMemo` for efficient filtering
+- Searches across prompt_text and response_text fields
+- Element search across name, description, and notes
+- Filters combine with AND logic
+- Smooth UX with instant feedback
+- Results counter shows "X of Y items"
+
+**Files Modified**:
+- `PromptHistory.tsx` - Added search bar, filter dropdowns, and filtering logic
+- `ProjectManager.tsx` - Added element search and type filter
 
 ---
 

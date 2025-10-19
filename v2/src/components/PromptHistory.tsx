@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag, Edit2, Save, X } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag, Edit2, Save, X, Search, Filter, ChevronDown } from 'lucide-react';
 import { Database } from '../lib/database.types';
 import { api } from '../lib/api';
 import { SkeletonPromptCard } from './SkeletonLoader';
@@ -41,6 +41,13 @@ export default function PromptHistory() {
   const [editingResponseId, setEditingResponseId] = useState<string | null>(null);
   const [editedText, setEditedText] = useState('');
   const [saving, setSaving] = useState(false);
+  
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBookFilter, setSelectedBookFilter] = useState<string>('all');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
+  const [answerStatusFilter, setAnswerStatusFilter] = useState<string>('all'); // 'all', 'answered', 'unanswered'
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadPrompts();
@@ -211,6 +218,60 @@ export default function PromptHistory() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  // Filter and search prompts
+  const filteredPrompts = useMemo(() => {
+    return prompts.filter(prompt => {
+      // Search filter - check prompt text and response text
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const promptMatches = prompt.prompt_text?.toLowerCase().includes(query);
+        const responses = responseMap.get(prompt.id) || [];
+        const responseMatches = responses.some(r => 
+          r.response_text?.toLowerCase().includes(query)
+        );
+        
+        if (!promptMatches && !responseMatches) {
+          return false;
+        }
+      }
+
+      // Book filter
+      if (selectedBookFilter !== 'all' && prompt.book_id !== selectedBookFilter) {
+        return false;
+      }
+
+      // Type filter
+      if (selectedTypeFilter !== 'all' && prompt.prompt_type !== selectedTypeFilter) {
+        return false;
+      }
+
+      // Answer status filter
+      if (answerStatusFilter !== 'all') {
+        const responses = responseMap.get(prompt.id) || [];
+        const hasResponse = responses.length > 0;
+        
+        if (answerStatusFilter === 'answered' && !hasResponse) {
+          return false;
+        }
+        if (answerStatusFilter === 'unanswered' && hasResponse) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [prompts, searchQuery, selectedBookFilter, selectedTypeFilter, answerStatusFilter, responseMap]);
+
+  const uniqueBooks = useMemo(() => {
+    const books = Array.from(bookMap.values());
+    return books.sort((a, b) => a.title.localeCompare(b.title));
+  }, [bookMap]);
+
+  const uniqueTypes = useMemo(() => {
+    const types = new Set(prompts.map(p => p.prompt_type).filter(Boolean));
+    return Array.from(types).sort();
+  }, [prompts]);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
@@ -230,6 +291,106 @@ export default function PromptHistory() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filter Section */}
+        <div className="mb-6 space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search prompts and responses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+            />
+          </div>
+
+          {/* Filter Toggle Button */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Filter className="w-4 h-4" />
+              <span className="font-medium">Filters</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {(searchQuery || selectedBookFilter !== 'all' || selectedTypeFilter !== 'all' || answerStatusFilter !== 'all') && (
+              <div className="text-sm text-slate-600">
+                Showing {filteredPrompts.length} of {prompts.length} prompts
+              </div>
+            )}
+          </div>
+
+          {/* Filter Options */}
+          {showFilters && (
+            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Book Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Story</label>
+                  <select
+                    value={selectedBookFilter}
+                    onChange={(e) => setSelectedBookFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                  >
+                    <option value="all">All Stories</option>
+                    {uniqueBooks.map(book => (
+                      <option key={book.id} value={book.id}>{book.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Type Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Prompt Type</label>
+                  <select
+                    value={selectedTypeFilter}
+                    onChange={(e) => setSelectedTypeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                  >
+                    <option value="all">All Types</option>
+                    {uniqueTypes.map(type => (
+                      <option key={type} value={type}>
+                        {PROMPT_TYPE_LABELS[type] || type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Answer Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                  <select
+                    value={answerStatusFilter}
+                    onChange={(e) => setAnswerStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                  >
+                    <option value="all">All</option>
+                    <option value="answered">Answered</option>
+                    <option value="unanswered">Unanswered</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {(selectedBookFilter !== 'all' || selectedTypeFilter !== 'all' || answerStatusFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSelectedBookFilter('all');
+                    setSelectedTypeFilter('all');
+                    setAnswerStatusFilter('all');
+                  }}
+                  className="text-sm text-slate-600 hover:text-slate-900 font-medium"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {loading ? (
           <div className="space-y-4">
             <SkeletonPromptCard />
@@ -251,15 +412,28 @@ export default function PromptHistory() {
               Go to Dashboard
             </button>
           </div>
+        ) : filteredPrompts.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-slate-200">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No prompts found</h3>
+            <p className="text-slate-600 mb-6">Try adjusting your search or filters</p>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedBookFilter('all');
+                setSelectedTypeFilter('all');
+                setAnswerStatusFilter('all');
+              }}
+              className="text-slate-900 hover:text-slate-700 font-medium"
+            >
+              Clear all filters
+            </button>
+          </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-slate-600">
-                {prompts.length} {prompts.length === 1 ? 'prompt' : 'prompts'} generated
-              </p>
-            </div>
-
-            {prompts.map((prompt) => {
+            {filteredPrompts.map((prompt) => {
               const colors = PROMPT_TYPE_COLORS[prompt.prompt_type] || PROMPT_TYPE_COLORS.general;
               const book = prompt.book_id ? bookMap.get(prompt.book_id) : null;
               const responses = responseMap.get(prompt.id) || [];
