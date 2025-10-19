@@ -149,11 +149,14 @@ export default function Dashboard() {
             {/* Stats Badges & Sign Out */}
             <div className="flex items-center gap-6">
               <div className="hidden md:flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-full hover:bg-orange-100 transition-colors">
+                <button
+                  onClick={() => navigate('/stats')}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-full hover:bg-orange-100 transition-colors cursor-pointer"
+                >
                   <Flame className="w-4 h-4 text-orange-600" />
                   <span className="text-sm font-semibold text-orange-900">{profile?.current_streak || 0}</span>
                   <span className="text-sm text-orange-700">day streak</span>
-                </div>
+                </button>
 
                 <button
                   onClick={() => navigate('/projects')}

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import PromptInterface from './components/PromptInterface';
 import ProjectManager from './components/ProjectManager';
 import PromptHistory from './components/PromptHistory';
+import Stats from './components/Stats';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -84,6 +85,14 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <PromptHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/stats"
+        element={
+          <ProtectedRoute>
+            <Stats />
           </ProtectedRoute>
         }
       />
