@@ -3,27 +3,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import { Database } from '../lib/database.types';
 import { Flame, BookOpen, LogOut, Plus, Lightbulb, User, Check, X, Sprout } from 'lucide-react';
-import PromptInterface from './PromptInterface';
-import ProjectManager from './ProjectManager';
-import PromptHistory from './PromptHistory';
 import toast from 'react-hot-toast';
 import { SkeletonDashboardStats, SkeletonBookCard } from './SkeletonLoader';
+import { useNavigate } from 'react-router-dom';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
-type Prompt = Database['public']['Tables']['prompts']['Row'];
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [books, setBooks] = useState<Book[]>([]);
-  const [recentPrompts, setRecentPrompts] = useState<Prompt[]>([]);
   const [totalPromptCount, setTotalPromptCount] = useState(0);
-  const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
-  const [activeView, setActiveView] = useState<'dashboard' | 'prompt' | 'projects' | 'history'>('dashboard');
-  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [loadingHistory, setLoadingHistory] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [editingDisplayName, setEditingDisplayName] = useState(false);
@@ -55,7 +47,7 @@ export default function Dashboard() {
     if (!user) return;
 
     try {
-      const [profileData, booksData, promptsData, allPromptsData] = await Promise.all([
+      const [profileData, booksData, , allPromptsData] = await Promise.all([
         api.profile.get(),
         api.books.list(),
         api.prompts.list({ limit: 5 }),
@@ -64,7 +56,6 @@ export default function Dashboard() {
 
       setProfile(profileData);
       setBooks(booksData);
-      setRecentPrompts(promptsData);
       setTotalPromptCount(allPromptsData.length);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -104,43 +95,6 @@ export default function Dashboard() {
     setDisplayNameValue('');
   };
 
-  const loadAllPrompts = async () => {
-    if (!user) return;
-    
-    setLoadingHistory(true);
-    try {
-      const data = await api.prompts.list();
-      setAllPrompts(data);
-    } catch (error) {
-      console.error('Error loading prompts:', error);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  const handleViewHistory = () => {
-    setActiveView('history');
-    loadAllPrompts(); // This will now always reload to get the latest prompts
-  };
-
-  const handleViewProjects = (bookId?: string) => {
-    setSelectedBookId(bookId || null);
-    setSelectedElementId(null); // Clear element selection when viewing projects normally
-    setActiveView('projects');
-  };
-
-  const handleNavigateToElement = (bookId: string, elementId: string) => {
-    setSelectedBookId(bookId);
-    setSelectedElementId(elementId);
-    setActiveView('projects');
-  };
-
-  const handleNavigateToStory = (bookId: string) => {
-    setSelectedBookId(bookId);
-    setSelectedElementId(null);
-    setActiveView('projects');
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -178,50 +132,6 @@ export default function Dashboard() {
     );
   }
 
-  if (activeView === 'prompt') {
-    return (
-      <PromptInterface 
-        onBack={() => {
-          setActiveView('dashboard');
-          loadDashboardData(); // Refresh data when returning to dashboard
-        }}
-        onRefresh={loadDashboardData}
-        onViewHistory={handleViewHistory}
-        onNavigateToElement={handleNavigateToElement}
-      />
-    );
-  }
-
-  if (activeView === 'projects') {
-    return (
-      <ProjectManager
-        onBack={() => {
-          setSelectedBookId(null);
-          setSelectedElementId(null);
-          setActiveView('dashboard');
-          loadDashboardData(); // Refresh data when returning to dashboard
-        }}
-        initialBookId={selectedBookId}
-        initialElementId={selectedElementId}
-      />
-    );
-  }
-
-  if (activeView === 'history') {
-    return (
-      <PromptHistory
-        onBack={() => {
-          setActiveView('dashboard');
-          loadDashboardData(); // Refresh data when returning to dashboard
-        }}
-        prompts={allPrompts}
-        onNavigateToElement={handleNavigateToElement}
-        onNavigateToStory={handleNavigateToStory}
-        isLoading={loadingHistory}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 shadow-sm">
@@ -245,7 +155,7 @@ export default function Dashboard() {
                 </div>
 
                 <button
-                  onClick={() => handleViewProjects()}
+                  onClick={() => navigate('/projects')}
                   className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 transition-colors group"
                 >
                   <BookOpen className="w-4 h-4 text-blue-600" />
@@ -254,7 +164,7 @@ export default function Dashboard() {
                 </button>
 
                 <button
-                  onClick={handleViewHistory}
+                  onClick={() => navigate('/history')}
                   className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full hover:bg-green-100 transition-colors group"
                 >
                   <Lightbulb className="w-4 h-4 text-green-600" />
@@ -374,7 +284,7 @@ export default function Dashboard() {
             Generate a personalized writing prompt to deepen your story world
           </p>
           <button
-            onClick={() => setActiveView('prompt')}
+            onClick={() => navigate('/prompt')}
             className="bg-white text-slate-900 px-6 py-3 rounded-lg font-semibold hover:bg-slate-100 transition-colors inline-flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
@@ -390,7 +300,7 @@ export default function Dashboard() {
                 <div
                   key={book.id}
                   className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                  onClick={() => handleViewProjects(book.id)}
+                  onClick={() => navigate(`/projects/${book.id}`)}
                 >
                   <BookOpen className="w-5 h-5 text-slate-600" />
                   <div className="flex-1">
@@ -404,7 +314,7 @@ export default function Dashboard() {
             </div>
             {books.length > 3 && (
               <button
-                onClick={() => handleViewProjects()}
+                onClick={() => navigate('/projects')}
                 className="mt-4 text-sm text-slate-600 hover:text-slate-900 font-medium"
               >
                 View all {books.length} stories →
@@ -421,7 +331,7 @@ export default function Dashboard() {
             <h3 className="text-xl font-bold text-slate-900 mb-2">No stories yet</h3>
             <p className="text-slate-600 mb-6">Create your first story to start generating prompts</p>
             <button
-              onClick={() => handleViewProjects()}
+              onClick={() => navigate('/projects')}
               className="bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors inline-flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />

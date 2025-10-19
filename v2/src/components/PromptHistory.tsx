@@ -3,19 +3,13 @@ import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag } from 'lucide-react';
 import { Database } from '../lib/database.types';
 import { api } from '../lib/api';
 import { SkeletonPromptCard } from './SkeletonLoader';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 type Prompt = Database['public']['Tables']['prompts']['Row'];
 type Response = Database['public']['Tables']['responses']['Row'];
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
-
-interface PromptHistoryProps {
-  onBack: () => void;
-  prompts: Prompt[];
-  onNavigateToElement?: (bookId: string, elementId: string) => void;
-  onNavigateToStory?: (bookId: string) => void;
-  isLoading?: boolean;
-}
 
 const PROMPT_TYPE_LABELS: Record<string, string> = {
   character_deep_dive: 'Character Deep Dive',
@@ -35,16 +29,38 @@ const PROMPT_TYPE_COLORS: Record<string, { bg: string; text: string; border: str
   general: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
 };
 
-export default function PromptHistory({ onBack, prompts, onNavigateToElement, onNavigateToStory, isLoading = false }: PromptHistoryProps) {
+export default function PromptHistory() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [loading, setLoading] = useState(true);
   const [elementMap, setElementMap] = useState<Map<string, StoryElement>>(new Map());
   const [bookMap, setBookMap] = useState<Map<string, Book>>(new Map());
   const [responseMap, setResponseMap] = useState<Map<string, Response[]>>(new Map());
+
+  useEffect(() => {
+    loadPrompts();
+  }, [user]);
 
   useEffect(() => {
     loadElements();
     loadBooks();
     loadResponses();
   }, [prompts]);
+
+  const loadPrompts = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const data = await api.prompts.list();
+      setPrompts(data);
+    } catch (error) {
+      console.error('Error loading prompts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadElements = async () => {
     // Collect all unique element IDs and book IDs from all prompts
@@ -147,7 +163,7 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={onBack}
+              onClick={() => navigate('/')}
               className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -160,7 +176,7 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isLoading ? (
+        {loading ? (
           <div className="space-y-4">
             <SkeletonPromptCard />
             <SkeletonPromptCard />
@@ -175,7 +191,7 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
             <h3 className="text-xl font-bold text-slate-900 mb-2">No prompts yet</h3>
             <p className="text-slate-600 mb-6">Generate your first prompt to start building your story world</p>
             <button
-              onClick={onBack}
+              onClick={() => navigate('/')}
               className="bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
             >
               Go to Dashboard
@@ -211,7 +227,7 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
                     {/* Story Tag */}
                     {book && (
                       <button
-                        onClick={() => onNavigateToStory && onNavigateToStory(book.id)}
+                        onClick={() => navigate(`/projects/${book.id}`)}
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white border border-slate-900 transition-colors"
                       >
                         <BookOpen className="w-3 h-3" />
@@ -253,7 +269,7 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
                             return (
                               <button
                                 key={elementId}
-                                onClick={() => onNavigateToElement && onNavigateToElement(element.book_id, elementId)}
+                                onClick={() => navigate(`/projects/${element.book_id}/${elementId}`)}
                                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-medium transition-colors"
                               >
                                 <BookOpen className="w-3 h-3" />

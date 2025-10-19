@@ -11,27 +11,23 @@ import {
   Lightbulb,
   Package,
   Flag,
-  Edit2,
   Trash2,
   X,
 } from 'lucide-react';
 import StoryElementDetail from './StoryElementDetail';
 import toast from 'react-hot-toast';
 import { SkeletonBookCard, SkeletonElementCard } from './SkeletonLoader';
+import { useNavigate, useParams } from 'react-router-dom';
 
 type Series = Database['public']['Tables']['series']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
 
-interface ProjectManagerProps {
-  onBack: () => void;
-  initialBookId?: string | null;
-  initialElementId?: string | null;
-}
-
-export default function ProjectManager({ onBack, initialBookId, initialElementId }: ProjectManagerProps) {
+export default function ProjectManager() {
   const { user } = useAuth();
-  const [series, setSeries] = useState<Series[]>([]);
+  const navigate = useNavigate();
+  const { bookId, elementId } = useParams();
+  const [, setSeries] = useState<Series[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
   const [elements, setElements] = useState<StoryElement[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -53,22 +49,22 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
   }, [selectedBook]);
 
   useEffect(() => {
-    if (initialBookId && books.length > 0) {
-      const book = books.find(b => b.id === initialBookId);
+    if (bookId && books.length > 0) {
+      const book = books.find(b => b.id === bookId);
       if (book) {
         setSelectedBook(book);
       }
     }
-  }, [initialBookId, books]);
+  }, [bookId, books]);
 
   useEffect(() => {
-    if (initialElementId && elements.length > 0) {
-      const element = elements.find(e => e.id === initialElementId);
+    if (elementId && elements.length > 0) {
+      const element = elements.find(e => e.id === elementId);
       if (element) {
         setSelectedElement(element);
       }
     }
-  }, [initialElementId, elements]);
+  }, [elementId, elements]);
 
   const loadProjects = async () => {
     if (!user) return;
@@ -82,8 +78,8 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
 
       setSeries(seriesData);
       setBooks(booksData);
-      // Only auto-select first book if there's no initialBookId and no book selected yet
-      if (booksData && booksData.length > 0 && !selectedBook && !initialBookId) {
+      // Only auto-select first book if there's no bookId from URL and no book selected yet
+      if (booksData && booksData.length > 0 && !selectedBook && !bookId) {
         setSelectedBook(booksData[0]);
       }
     } catch (error) {
@@ -217,7 +213,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={onBack}
+              onClick={() => navigate('/')}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />

@@ -13,17 +13,11 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SkeletonPromptGeneration } from './SkeletonLoader';
+import { useNavigate } from 'react-router-dom';
 
 type Book = Database['public']['Tables']['books']['Row'];
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
 type Prompt = Database['public']['Tables']['prompts']['Row'];
-
-interface PromptInterfaceProps {
-  onBack: () => void;
-  onRefresh: () => void;
-  onViewHistory?: () => void;
-  onNavigateToElement?: (bookId: string, elementId: string) => void;
-}
 
 const PROMPT_MODES = [
   { id: 'general', label: 'General', description: 'Balanced prompts for overall development' },
@@ -62,8 +56,9 @@ function getAvailableModes(elements: StoryElement[]): string[] {
   return modes;
 }
 
-export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNavigateToElement }: PromptInterfaceProps) {
+export default function PromptInterface() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [books, setBooks] = useState<Book[]>([]);
   const [elements, setElements] = useState<StoryElement[]>([]);
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
@@ -227,8 +222,6 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
             longest_streak: longestStreak,
             last_prompt_date: today,
           });
-
-          onRefresh();
         }
       }
     } catch (error) {
@@ -320,14 +313,13 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
       setSelectedTags([]);
       setGeneratedPromptText('');
       setGeneratedElementRefs([]);
-      onRefresh();
 
       toast.success('Response saved successfully!', { id: toastId });
 
       // Navigate to the first story element that was referenced, if available
-      if (onNavigateToElement && generatedElementRefs.length > 0 && selectedBook) {
+      if (generatedElementRefs.length > 0 && selectedBook) {
         const firstElementId = generatedElementRefs[0];
-        onNavigateToElement(selectedBook, firstElementId);
+        navigate(`/projects/${selectedBook}/${firstElementId}`);
       }
     } catch (error) {
       console.error('Error saving response:', error);
@@ -365,20 +357,18 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+              <button onClick={() => navigate('/')} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <h1 className="text-2xl font-bold text-slate-900">Writing Prompt</h1>
             </div>
-            {onViewHistory && (
-              <button
-                onClick={onViewHistory}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <History className="w-4 h-4" />
-                History
-              </button>
-            )}
+            <button
+              onClick={() => navigate('/history')}
+              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <History className="w-4 h-4" />
+              History
+            </button>
           </div>
         </div>
       </header>
