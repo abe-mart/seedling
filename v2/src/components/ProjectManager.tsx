@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import StoryElementDetail from './StoryElementDetail';
 import toast from 'react-hot-toast';
+import { SkeletonBookCard, SkeletonElementCard } from './SkeletonLoader';
 
 type Series = Database['public']['Tables']['series']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
@@ -38,6 +39,8 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
   const [showModal, setShowModal] = useState<'series' | 'book' | 'element' | null>(null);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [formData, setFormData] = useState({ title: '', description: '', elementType: 'character' as const });
+  const [loadingBooks, setLoadingBooks] = useState(true);
+  const [loadingElements, setLoadingElements] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -70,6 +73,7 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
   const loadProjects = async () => {
     if (!user) return;
 
+    setLoadingBooks(true);
     try {
       const [seriesData, booksData] = await Promise.all([
         api.series.list(),
@@ -84,15 +88,20 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
       }
     } catch (error) {
       console.error('Error loading projects:', error);
+    } finally {
+      setLoadingBooks(false);
     }
   };
 
   const loadElements = async (bookId: string) => {
+    setLoadingElements(true);
     try {
       const data = await api.elements.list(bookId);
       setElements(data);
     } catch (error) {
       console.error('Error loading elements:', error);
+    } finally {
+      setLoadingElements(false);
     }
   };
 
@@ -233,54 +242,60 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
               </div>
 
               <div className="space-y-2">
-                {books.map((book) => (
-                  <div
-                    key={book.id}
-                    className={`relative group rounded-lg transition-colors ${
-                      selectedBook?.id === book.id
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
-                    }`}
-                  >
-                    <button
-                      onClick={() => {
-                        setSelectedBook(book);
-                        setSelectedElement(null); // Clear selected element when switching stories
-                      }}
-                      className="w-full text-left p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <BookOpen className="w-5 h-5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold truncate">{book.title}</div>
-                          {book.description && (
-                            <div
-                              className={`text-sm truncate ${
-                                selectedBook?.id === book.id ? 'text-slate-300' : 'text-slate-600'
-                              }`}
-                            >
-                              {book.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setBookToDelete(book);
-                      }}
-                      className={`absolute top-2 right-2 p-1.5 hover:bg-red-50 text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 ${
-                        selectedBook?.id === book.id ? 'hover:bg-red-900/20' : ''
+                {loadingBooks ? (
+                  <>
+                    <SkeletonBookCard />
+                    <SkeletonBookCard />
+                    <SkeletonBookCard />
+                  </>
+                ) : books.length > 0 ? (
+                  books.map((book) => (
+                    <div
+                      key={book.id}
+                      className={`relative group rounded-lg transition-colors ${
+                        selectedBook?.id === book.id
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
                       }`}
-                      title="Delete story"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-
-                {books.length === 0 && (
+                      <button
+                        onClick={() => {
+                          setSelectedBook(book);
+                          setSelectedElement(null); // Clear selected element when switching stories
+                        }}
+                        className="w-full text-left p-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="w-5 h-5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold truncate">{book.title}</div>
+                            {book.description && (
+                              <div
+                                className={`text-sm truncate ${
+                                  selectedBook?.id === book.id ? 'text-slate-300' : 'text-slate-600'
+                                }`}
+                              >
+                                {book.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBookToDelete(book);
+                        }}
+                        className={`absolute top-2 right-2 p-1.5 hover:bg-red-50 text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 ${
+                          selectedBook?.id === book.id ? 'hover:bg-red-900/20' : ''
+                        }`}
+                        title="Delete story"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))
+                ) : (
                   <div className="text-center py-8 text-slate-500">
                     <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No stories yet</p>
@@ -310,53 +325,60 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {elements.map((element) => {
-                    const Icon = getElementIcon(element.element_type);
-                    return (
-                      <div
-                        key={element.id}
-                        className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group"
-                        onClick={() => setSelectedElement(element)}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${getElementColor(
-                              element.element_type
-                            )}`}
-                          >
-                            <Icon className="w-5 h-5" />
+                  {loadingElements ? (
+                    <>
+                      <SkeletonElementCard />
+                      <SkeletonElementCard />
+                      <SkeletonElementCard />
+                      <SkeletonElementCard />
+                    </>
+                  ) : elements.length > 0 ? (
+                    elements.map((element) => {
+                      const Icon = getElementIcon(element.element_type);
+                      return (
+                        <div
+                          key={element.id}
+                          className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group"
+                          onClick={() => setSelectedElement(element)}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center ${getElementColor(
+                                element.element_type
+                              )}`}
+                            >
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteElement(element.id);
+                              }}
+                              className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteElement(element.id);
-                            }}
-                            className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <h3 className="font-semibold text-slate-900 mb-1">{element.name}</h3>
+                          <p className="text-sm text-slate-600 capitalize mb-2">
+                            {element.element_type.replace('_', ' ')}
+                          </p>
+                          {element.description && (
+                            <p className="text-sm text-slate-700 line-clamp-2">{element.description}</p>
+                          )}
                         </div>
-                        <h3 className="font-semibold text-slate-900 mb-1">{element.name}</h3>
-                        <p className="text-sm text-slate-600 capitalize mb-2">
-                          {element.element_type.replace('_', ' ')}
-                        </p>
-                        {element.description && (
-                          <p className="text-sm text-slate-700 line-clamp-2">{element.description}</p>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-full text-center py-12">
+                      <Lightbulb className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                      <h3 className="text-lg font-semibold text-slate-900 mb-2">No story elements yet</h3>
+                      <p className="text-slate-600 mb-4">
+                        Add characters, locations, and other elements to your story
+                      </p>
+                    </div>
+                  )}
                 </div>
-
-                {elements.length === 0 && (
-                  <div className="text-center py-12">
-                    <Lightbulb className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">No story elements yet</h3>
-                    <p className="text-slate-600 mb-4">
-                      Add characters, locations, and other elements to your story
-                    </p>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">

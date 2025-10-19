@@ -3,6 +3,7 @@ import { X, Save, Calendar, MessageSquare, Lightbulb, Edit3 } from 'lucide-react
 import { api } from '../lib/api';
 import { Database } from '../lib/database.types';
 import toast from 'react-hot-toast';
+import { SkeletonText } from './SkeletonLoader';
 
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
 type Prompt = Database['public']['Tables']['prompts']['Row'];
@@ -200,7 +201,10 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
             </div>
 
             {loading ? (
-              <div className="text-center py-8 text-slate-500">Loading...</div>
+              <div className="space-y-4">
+                <SkeletonText lines={4} />
+                <SkeletonText lines={3} />
+              </div>
             ) : relatedPrompts.length === 0 ? (
               <div className="bg-slate-50 rounded-lg p-6 text-center">
                 <p className="text-slate-600">No prompts reference this element yet</p>

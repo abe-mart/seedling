@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag } from 'lucide-react';
 import { Database } from '../lib/database.types';
 import { api } from '../lib/api';
+import { SkeletonPromptCard } from './SkeletonLoader';
 
 type Prompt = Database['public']['Tables']['prompts']['Row'];
 type Response = Database['public']['Tables']['responses']['Row'];
@@ -160,8 +161,11 @@ export default function PromptHistory({ onBack, prompts, onNavigateToElement, on
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="text-slate-600">Loading prompt history...</div>
+          <div className="space-y-4">
+            <SkeletonPromptCard />
+            <SkeletonPromptCard />
+            <SkeletonPromptCard />
+            <SkeletonPromptCard />
           </div>
         ) : prompts.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-slate-200">

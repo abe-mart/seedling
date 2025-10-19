@@ -12,6 +12,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SkeletonPromptGeneration } from './SkeletonLoader';
 
 type Book = Database['public']['Tables']['books']['Row'];
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
@@ -518,66 +519,72 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 text-white shadow-lg">
-              <div className="flex items-start gap-3 mb-4">
-                <Sparkles className="w-6 h-6 flex-shrink-0 mt-1" />
-                <p className="text-lg leading-relaxed">{currentPrompt.prompt_text}</p>
-              </div>
-              <div className="text-slate-300 text-sm">
-                {selectedMode.replace('_', ' ')} • {new Date().toLocaleDateString()}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <label className="text-lg font-semibold text-slate-900">Your Response</label>
-                <div className="flex items-center gap-4 text-sm text-slate-500">
-                  <div>{wordCount} words</div>
-                  {autoSaveTimeout && <div className="text-green-600">Auto-saving...</div>}
+            {loading ? (
+              <SkeletonPromptGeneration />
+            ) : (
+              <>
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 text-white shadow-lg">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Sparkles className="w-6 h-6 flex-shrink-0 mt-1" />
+                    <p className="text-lg leading-relaxed">{currentPrompt.prompt_text}</p>
+                  </div>
+                  <div className="text-slate-300 text-sm">
+                    {selectedMode.replace('_', ' ')} • {new Date().toLocaleDateString()}
+                  </div>
                 </div>
-              </div>
 
-              <textarea
-                value={responseText}
-                onChange={(e) => setResponseText(e.target.value)}
-                placeholder="Start writing your response..."
-                className="w-full min-h-[400px] px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none resize-none text-slate-900 leading-relaxed"
-              />
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-lg font-semibold text-slate-900">Your Response</label>
+                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                      <div>{wordCount} words</div>
+                      {autoSaveTimeout && <div className="text-green-600">Auto-saving...</div>}
+                    </div>
+                  </div>
 
-              <div className="mt-4 flex gap-3">
-                <button
-                  onClick={saveResponse}
-                  disabled={saving || !responseText.trim()}
-                  className="flex-1 bg-slate-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      Save & Finish
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm('Discard this prompt and start over?')) {
-                      setCurrentPrompt(null);
-                      setResponseText('');
-                      setSelectedTags([]);
-                      setGeneratedPromptText('');
-                      setGeneratedElementRefs([]);
-                    }
-                  }}
-                  className="px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
+                  <textarea
+                    value={responseText}
+                    onChange={(e) => setResponseText(e.target.value)}
+                    placeholder="Start writing your response..."
+                    className="w-full min-h-[400px] px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none resize-none text-slate-900 leading-relaxed"
+                  />
+
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={saveResponse}
+                      disabled={saving || !responseText.trim()}
+                      className="flex-1 bg-slate-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5" />
+                          Save & Finish
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Discard this prompt and start over?')) {
+                          setCurrentPrompt(null);
+                          setResponseText('');
+                          setSelectedTags([]);
+                          setGeneratedPromptText('');
+                          setGeneratedElementRefs([]);
+                        }
+                      }}
+                      className="px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </main>

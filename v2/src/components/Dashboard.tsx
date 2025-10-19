@@ -7,6 +7,7 @@ import PromptInterface from './PromptInterface';
 import ProjectManager from './ProjectManager';
 import PromptHistory from './PromptHistory';
 import toast from 'react-hot-toast';
+import { SkeletonDashboardStats, SkeletonBookCard } from './SkeletonLoader';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
@@ -142,8 +143,37 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
+      <div className="min-h-screen bg-slate-50">
+        <header className="bg-white border-b border-slate-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-lime-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm">
+                  <Sprout className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-slate-900">StorySeed</h1>
+              </div>
+              <div className="hidden md:flex items-center gap-6">
+                <SkeletonDashboardStats />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8 animate-pulse">
+            <div className="h-8 bg-slate-200 rounded w-1/3 mb-2"></div>
+            <div className="h-5 bg-slate-200 rounded w-1/4"></div>
+          </div>
+          <div className="bg-slate-200 rounded-2xl h-48 mb-8 animate-pulse"></div>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+            <div className="h-6 bg-slate-200 rounded w-1/4 mb-4 animate-pulse"></div>
+            <div className="space-y-3">
+              <SkeletonBookCard />
+              <SkeletonBookCard />
+              <SkeletonBookCard />
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
