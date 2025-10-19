@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Calendar, MessageSquare, Lightbulb, Edit3 } from 'lucide-react';
+import { X, Save, Calendar, MessageSquare, Lightbulb, Edit3, Sparkles } from 'lucide-react';
 import { api } from '../lib/api';
 import { Database } from '../lib/database.types';
 import toast from 'react-hot-toast';
@@ -28,6 +28,9 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
   const [relatedPrompts, setRelatedPrompts] = useState<PromptWithResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [showEnhancedPreview, setShowEnhancedPreview] = useState(false);
+  const [enhancedDescription, setEnhancedDescription] = useState('');
 
   useEffect(() => {
     loadRelatedPrompts();
@@ -83,6 +86,40 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
     }
     
     setSaving(false);
+  };
+
+  const handleEnhanceDescription = async () => {
+    if (relatedPrompts.length === 0) {
+      toast.error('No prompts/responses yet. Write some first to enhance the description.');
+      return;
+    }
+
+    setEnhancing(true);
+    const toastId = toast.loading('Consolidating your notes...');
+
+    try {
+      const result = await api.ai.enhanceElementDescription(element.id);
+      setEnhancedDescription(result.enhancedDescription);
+      setShowEnhancedPreview(true);
+      toast.success('Notes consolidated!', { id: toastId });
+    } catch (error) {
+      console.error('Error enhancing description:', error);
+      toast.error('Failed to enhance description. Please try again.', { id: toastId });
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleAcceptEnhanced = () => {
+    setDescription(enhancedDescription);
+    setShowEnhancedPreview(false);
+    setIsEditing(true);
+    toast.success('Consolidated description applied! You can edit before saving.');
+  };
+
+  const handleRejectEnhanced = () => {
+    setShowEnhancedPreview(false);
+    setEnhancedDescription('');
   };
 
   const formatDate = (dateString: string) => {
@@ -156,7 +193,19 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
         <div className="px-6 py-6 max-h-[calc(100vh-12rem)] overflow-y-auto">
           {/* Description Section */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-slate-700">Description</label>
+              {!isEditing && relatedPrompts.length > 0 && (
+                <button
+                  onClick={handleEnhanceDescription}
+                  disabled={enhancing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 hover:border-purple-300"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {enhancing ? 'Consolidating...' : 'Consolidate Notes'}
+                </button>
+              )}
+            </div>
             {isEditing ? (
               <textarea
                 value={description}
@@ -255,6 +304,82 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
           </div>
         </div>
       </div>
+
+      {/* Enhanced Description Preview Modal */}
+      {showEnhancedPreview && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Consolidated Description</h3>
+                  <p className="text-sm text-slate-600">Review your notes merged into one description</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-6">
+              {/* Info Banner */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> This consolidates your scattered notes, description, and Q&A responses 
+                  into one organized description. Only information you wrote is included. Review and edit as needed.
+                </p>
+              </div>
+
+              {/* Original Description (if exists) */}
+              {element.description && (
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Current Description
+                  </label>
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{element.description}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Consolidated Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Consolidated Description
+                </label>
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-lg">
+                  <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">{enhancedDescription}</p>
+                </div>
+              </div>
+
+              {/* Info Note */}
+              <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <strong>Tip:</strong> This is just a consolidation tool. After applying, you'll enter edit 
+                  mode where you can refine and personalize the description before saving.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 rounded-b-xl flex justify-end gap-3">
+              <button
+                onClick={handleRejectEnhanced}
+                className="px-6 py-2 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAcceptEnhanced}
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Apply & Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

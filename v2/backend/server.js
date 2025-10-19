@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { auth, requireAuth } from './auth.js';
 import { pool } from './db.js';
-import { generateAIPrompt, getAvailableModes } from './api/openai.js';
+import { generateAIPrompt, getAvailableModes, enhanceElementDescription } from './api/openai.js';
 import { toNodeHandler } from 'better-auth/node';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -400,6 +400,59 @@ app.post('/api/available-modes', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error getting available modes:', error);
     res.status(500).json({ error: 'Failed to get available modes' });
+  }
+});
+
+app.post('/api/enhance-element-description', requireAuth, async (req, res) => {
+  const { elementId } = req.body;
+  
+  try {
+    // Fetch the element
+    const elementResult = await pool.query(
+      'SELECT * FROM story_elements WHERE id = $1 AND user_id = $2',
+      [elementId, req.user.id]
+    );
+    
+    if (elementResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Element not found' });
+    }
+    
+    const element = elementResult.rows[0];
+    
+    // Fetch all prompts that reference this element
+    const promptsResult = await pool.query(
+      'SELECT * FROM prompts WHERE user_id = $1 AND $2 = ANY(element_references) ORDER BY created_at DESC',
+      [req.user.id, elementId]
+    );
+    
+    // Fetch responses for these prompts
+    const promptIds = promptsResult.rows.map(p => p.id);
+    let promptsAndResponses = [];
+    
+    if (promptIds.length > 0) {
+      const responsesResult = await pool.query(
+        'SELECT * FROM responses WHERE prompt_id = ANY($1::uuid[]) ORDER BY created_at DESC',
+        [promptIds]
+      );
+      
+      // Combine prompts with their responses
+      promptsAndResponses = promptsResult.rows.map(prompt => ({
+        prompt_text: prompt.prompt_text,
+        prompt_type: prompt.prompt_type,
+        response_text: responsesResult.rows.find(r => r.prompt_id === prompt.id)?.response_text || null
+      }));
+    }
+    
+    // Generate enhanced description
+    const result = await enhanceElementDescription({
+      element,
+      promptsAndResponses
+    });
+    
+    res.json({ enhancedDescription: result.enhancedDescription });
+  } catch (error) {
+    console.error('Error enhancing element description:', error);
+    res.status(500).json({ error: 'Failed to enhance description' });
   }
 });
 

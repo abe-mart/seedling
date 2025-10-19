@@ -199,3 +199,82 @@ export function getAvailableModes(elements) {
   
   return modes;
 }
+
+// Enhance element description by synthesizing existing information
+export async function enhanceElementDescription(options) {
+  const {
+    element,
+    promptsAndResponses = [],
+  } = options;
+
+  // Build context from all existing information
+  let context = `Story Element: ${element.name}\n`;
+  context += `Type: ${element.element_type}\n\n`;
+  
+  if (element.description) {
+    context += `Current Description:\n${element.description}\n\n`;
+  }
+  
+  if (element.notes) {
+    context += `Author's Notes:\n${element.notes}\n\n`;
+  }
+
+  // Add all Q&A history
+  if (promptsAndResponses.length > 0) {
+    context += `Writing Prompts and Responses:\n\n`;
+    
+    promptsAndResponses.forEach((item, idx) => {
+      context += `${idx + 1}. Prompt (${item.prompt_type || 'general'}): ${item.prompt_text}\n`;
+      if (item.response_text) {
+        // Truncate very long responses but keep more than before since this is for synthesis
+        const responseText = item.response_text.length > 800 
+          ? item.response_text.substring(0, 800) + '...'
+          : item.response_text;
+        context += `   Response: ${responseText}\n`;
+      }
+      context += `\n`;
+    });
+  }
+
+  const systemPrompt = `You are a writing assistant helping an author consolidate their scattered notes about a story element.
+
+Your ONLY task is to organize and merge the information provided - nothing more.
+
+CRITICAL RULES:
+1. ONLY use facts, details, and descriptions explicitly written by the author
+2. Do NOT add any interpretations, analysis, or embellishments
+3. Do NOT add descriptive language, adjectives, or color that wasn't in the original
+4. Do NOT speculate or expand on ideas
+5. If the author wrote "tall" don't change it to "imposing" or "towering"
+6. Simply organize the scattered information into a clear, factual summary
+7. Maintain the author's exact wording whenever possible
+8. If there are contradictions, list both versions
+9. Keep it concise - only include what the author already wrote
+
+Think of this as copy-pasting the author's notes into a single organized document, not as creative writing.`;
+
+  const userPrompt = `Please consolidate ALL the information provided below into a single organized description. Use ONLY the exact facts and details written here - do not add any new adjectives, interpretations, or embellishments.
+
+${context}
+
+Consolidated Description:`;
+
+  try {
+    const completion = await getOpenAIClient().chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.3, // Lower temperature for more factual synthesis
+      max_tokens: 800,
+    });
+
+    return {
+      enhancedDescription: completion.choices[0]?.message?.content || '',
+    };
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    throw new Error('Failed to enhance description: ' + error.message);
+  }
+}

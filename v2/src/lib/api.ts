@@ -167,6 +167,11 @@ export const aiAPI = {
       method: 'POST',
       body: JSON.stringify({ elements }),
     }),
+  enhanceElementDescription: (elementId: string) =>
+    fetchAPI('/api/enhance-element-description', {
+      method: 'POST',
+      body: JSON.stringify({ elementId }),
+    }),
 };
 
 // Export a default object with all APIs
