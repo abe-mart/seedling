@@ -58,7 +58,15 @@ app.get('/api/profile', requireAuth, async (req, res) => {
 });
 
 app.put('/api/profile', requireAuth, async (req, res) => {
-  const { display_name, timezone, preferred_genres, writing_frequency } = req.body;
+  const { 
+    display_name, 
+    timezone, 
+    preferred_genres, 
+    writing_frequency,
+    current_streak,
+    longest_streak,
+    last_prompt_date
+  } = req.body;
   try {
     // First ensure profile exists
     let existingProfile = await pool.query(
@@ -81,11 +89,14 @@ app.put('/api/profile', requireAuth, async (req, res) => {
        SET display_name = COALESCE($1, display_name), 
            timezone = COALESCE($2, timezone), 
            preferred_genres = COALESCE($3, preferred_genres), 
-           writing_frequency = COALESCE($4, writing_frequency), 
+           writing_frequency = COALESCE($4, writing_frequency),
+           current_streak = COALESCE($5, current_streak),
+           longest_streak = COALESCE($6, longest_streak),
+           last_prompt_date = COALESCE($7, last_prompt_date),
            updated_at = NOW()
-       WHERE user_id = $5
+       WHERE user_id = $8
        RETURNING *`,
-      [display_name, timezone, preferred_genres, writing_frequency, req.user.id]
+      [display_name, timezone, preferred_genres, writing_frequency, current_streak, longest_streak, last_prompt_date, req.user.id]
     );
     res.json(result.rows[0]);
   } catch (error) {
