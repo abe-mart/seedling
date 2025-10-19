@@ -953,3 +953,10 @@ Based on effort vs impact, here are the top 5 features to implement next:
 **Last Updated**: October 17, 2025  
 **Document Owner**: StorySeed Development Team  
 **Next Review Date**: January 2026
+
+
+
+My Ideas
+Auto summarize button to move responses to descriptions.  
+Onboarding for new users.  
+Cool graph under streak badge.

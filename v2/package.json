@@ -27,6 +27,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "kysely": "^0.28.8",
     "lucide-react": "^0.344.0",
     "openai": "^6.5.0",

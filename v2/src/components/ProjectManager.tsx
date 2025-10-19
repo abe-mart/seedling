@@ -14,8 +14,10 @@ import {
   Trash2,
   X,
   Search,
+  Download,
 } from 'lucide-react';
 import StoryElementDetail from './StoryElementDetail';
+import ExportModal from './ExportModal';
 import toast from 'react-hot-toast';
 import { SkeletonBookCard, SkeletonElementCard } from './SkeletonLoader';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -34,6 +36,7 @@ export default function ProjectManager() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [selectedElement, setSelectedElement] = useState<StoryElement | null>(null);
   const [showModal, setShowModal] = useState<'series' | 'book' | 'element' | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [formData, setFormData] = useState({ title: '', description: '', elementType: 'character' as const });
   const [loadingBooks, setLoadingBooks] = useState(true);
@@ -345,13 +348,22 @@ export default function ProjectManager() {
                       <p className="text-slate-600 mt-1">{selectedBook.description}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => setShowModal('element')}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Element
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowExportModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export
+                    </button>
+                    <button
+                      onClick={() => setShowModal('element')}
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Element
+                    </button>
+                  </div>
                 </div>
 
                 {/* Search and Filter for Elements */}
@@ -601,6 +613,13 @@ export default function ProjectManager() {
           onUpdate={() => {
             loadElements(selectedBook!.id);
           }}
+        />
+      )}
+
+      {showExportModal && selectedBook && (
+        <ExportModal
+          book={selectedBook}
+          onClose={() => setShowExportModal(false)}
         />
       )}
     </div>
