@@ -5,6 +5,7 @@ import { Database } from '../lib/database.types';
 import { Flame, BookOpen, LogOut, Plus, Lightbulb, User, Check, X, Sprout } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SkeletonDashboardStats, SkeletonBookCard } from './SkeletonLoader';
+import OnboardingCard from './OnboardingCard';
 import { useNavigate } from 'react-router-dom';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -278,19 +279,21 @@ export default function Dashboard() {
           <p className="text-slate-600">Ready to expand your story world today?</p>
         </div>
 
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white mb-8 shadow-lg">
-          <h3 className="text-2xl font-bold mb-3">Ready for today's prompt?</h3>
-          <p className="text-slate-300 mb-6">
-            Generate a personalized writing prompt to deepen your story world
-          </p>
-          <button
-            onClick={() => navigate('/prompt')}
-            className="bg-white text-slate-900 px-6 py-3 rounded-lg font-semibold hover:bg-slate-100 transition-colors inline-flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Generate New Prompt
-          </button>
-        </div>
+        {books.length > 0 && (
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white mb-8 shadow-lg">
+            <h3 className="text-2xl font-bold mb-3">Ready for today's prompt?</h3>
+            <p className="text-slate-300 mb-6">
+              Generate a personalized writing prompt to deepen your story world
+            </p>
+            <button
+              onClick={() => navigate('/prompt')}
+              className="bg-white text-slate-900 px-6 py-3 rounded-lg font-semibold hover:bg-slate-100 transition-colors inline-flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Generate New Prompt
+            </button>
+          </div>
+        )}
 
         {books.length > 0 && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
@@ -324,20 +327,14 @@ export default function Dashboard() {
         )}
 
         {books.length === 0 && (
-          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-slate-200">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-slate-400" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No stories yet</h3>
-            <p className="text-slate-600 mb-6">Create your first story to start generating prompts</p>
-            <button
-              onClick={() => navigate('/projects')}
-              className="bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors inline-flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Create Story
-            </button>
-          </div>
+          <OnboardingCard
+            icon={BookOpen}
+            title="Welcome to StorySeed!"
+            description="Start your creative journey by creating your first story project. Then add story elements like characters, locations, and plot points to begin generating prompts."
+            actionLabel="Create Your First Story"
+            actionIcon={Plus}
+            onAction={() => navigate('/projects')}
+          />
         )}
       </main>
     </div>

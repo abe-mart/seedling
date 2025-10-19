@@ -241,7 +241,48 @@ npm install jspdf  # For PDF generation
 
 ---
 
-### 8. Prompt Scheduling & Reminders
+### 8. User Onboarding & Guided Workflow
+**Status**: ✅ Implemented  
+**Effort**: Medium  
+**Impact**: Very High  
+
+**Features**:
+- ✅ Contextual onboarding based on user progress
+- ✅ Beautiful gradient onboarding cards with clear CTAs
+- ✅ Dashboard shows "Create Your First Story" for new users
+- ✅ Prompt interface checks prerequisites before showing prompt generation
+- ✅ Shows "Create a Story First" if no stories exist
+- ✅ Shows "Add Story Elements" if story exists but has no elements
+- ✅ Generate button replaced with helpful guidance when elements missing
+- ✅ Clear navigation paths to complete each step
+- ✅ Consistent emerald gradient branding throughout
+- ✅ Icons and friendly messaging guide the user journey
+
+**User Journey**:
+1. New user → Dashboard shows onboarding card to create first story
+2. No stories → Prompt interface shows "Create a Story First" card
+3. Story exists but no elements → Shows "Add Story Elements" card with navigation
+4. Story has no elements → Generate button replaced with amber warning card + CTA
+5. Everything set up → Normal prompt generation workflow
+
+**Implementation**:
+- Created reusable `OnboardingCard` component with gradient styling
+- Dashboard hides prompt generation card when no stories exist
+- PromptInterface has three states: no books, no elements, ready to generate
+- Contextual messaging guides users through natural workflow
+- All CTAs navigate to the appropriate location
+
+**Philosophy**:
+Smooth, intuitive onboarding that gently guides users without being intrusive. The app teaches the workflow by showing the next logical step, not through tutorials or pop-ups.
+
+**Files Created/Modified**:
+- `src/components/OnboardingCard.tsx` - Reusable onboarding component
+- `src/components/Dashboard.tsx` - Added onboarding for new users
+- `src/components/PromptInterface.tsx` - Added prerequisite checks and contextual guidance
+
+---
+
+### 9. Prompt Scheduling & Reminders
 **Status**: Not implemented  
 **Effort**: High  
 **Impact**: Medium  

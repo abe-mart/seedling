@@ -10,9 +10,12 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  BookOpen,
+  Users,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { SkeletonPromptGeneration } from './SkeletonLoader';
+import OnboardingCard from './OnboardingCard';
 import { useNavigate } from 'react-router-dom';
 
 type Book = Database['public']['Tables']['books']['Row'];
@@ -403,7 +406,26 @@ export default function PromptInterface() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!currentPrompt ? (
+        {/* Show onboarding if no books */}
+        {books.length === 0 ? (
+          <OnboardingCard
+            icon={BookOpen}
+            title="Create a Story First"
+            description="Before generating prompts, you need to create a story project and add some story elements (like characters, locations, or plot points)."
+            actionLabel="Go to Projects"
+            actionIcon={BookOpen}
+            onAction={() => navigate('/projects')}
+          />
+        ) : elements.length === 0 && selectedBook ? (
+          <OnboardingCard
+            icon={Users}
+            title="Add Story Elements"
+            description="Great! You have a story. Now add some story elements (characters, locations, plot points, etc.) so the AI can generate relevant prompts for you."
+            actionLabel="Add Story Elements"
+            actionIcon={Users}
+            onAction={() => navigate(`/projects/${selectedBook}`)}
+          />
+        ) : !currentPrompt ? (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
             <div className="mb-6">
               <label className="block text-sm font-medium text-slate-700 mb-2">Select Project</label>
@@ -518,23 +540,39 @@ export default function PromptInterface() {
             )}
 
             {/* Generate button - now appears after advanced options */}
-            <button
-              onClick={generatePrompt}
-              disabled={loading || !selectedBook}
-              className="w-full bg-gradient-to-r from-lime-500 to-green-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-lime-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-lime-500/30"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Generate Prompt
-                </>
-              )}
-            </button>
+            {elements.length === 0 ? (
+              <div className="text-center p-6 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                <p className="text-amber-800 font-medium mb-2">No story elements yet</p>
+                <p className="text-sm text-amber-700 mb-4">
+                  Add characters, locations, or other story elements to generate relevant prompts
+                </p>
+                <button
+                  onClick={() => navigate(`/projects/${selectedBook}`)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+                >
+                  <Users className="w-4 h-4" />
+                  Add Story Elements
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={generatePrompt}
+                disabled={loading || !selectedBook}
+                className="w-full bg-gradient-to-r from-lime-500 to-green-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-lime-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-lime-500/30"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Generate Prompt
+                  </>
+                )}
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
