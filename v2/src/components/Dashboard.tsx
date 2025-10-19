@@ -22,11 +22,13 @@ export default function Dashboard() {
   const [editingDisplayName, setEditingDisplayName] = useState(false);
   const [displayNameValue, setDisplayNameValue] = useState('');
   const [savingDisplayName, setSavingDisplayName] = useState(false);
+  const [dailyPromptsEnabled, setDailyPromptsEnabled] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) {
       loadDashboardData();
+      loadDailyPromptsStatus();
     }
   }, [user]);
 
@@ -62,6 +64,16 @@ export default function Dashboard() {
       console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDailyPromptsStatus = async () => {
+    try {
+      const preferences = await api.dailyPrompts.getPreferences();
+      setDailyPromptsEnabled(preferences.enabled);
+    } catch (error) {
+      // Silently fail - daily prompts feature might not be configured yet
+      console.log('Daily prompts not configured yet');
     }
   };
 
@@ -258,10 +270,31 @@ export default function Dashboard() {
                       </div>
                     </div>
 
+                    {/* Settings Link */}
+                    <button
+                      onClick={() => {
+                        navigate('/settings');
+                        setShowAccountMenu(false);
+                      }}
+                      className="w-full flex items-center justify-between px-4 py-3 text-slate-700 hover:bg-slate-50 transition-colors text-sm font-medium"
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        Daily Prompt Settings
+                      </div>
+                      {dailyPromptsEnabled && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
+                          Active
+                        </span>
+                      )}
+                    </button>
+
                     {/* Sign Out Button */}
                     <button
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium"
+                      className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium border-t border-slate-100"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign Out
@@ -283,18 +316,53 @@ export default function Dashboard() {
         </div>
 
         {books.length > 0 && (
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white mb-8 shadow-lg">
-            <h3 className="text-2xl font-bold mb-3">Ready for today's prompt?</h3>
-            <p className="text-slate-300 mb-6">
-              Generate a personalized writing prompt to deepen your story world
-            </p>
-            <button
-              onClick={() => navigate('/prompt')}
-              className="bg-white text-slate-900 px-6 py-3 rounded-lg font-semibold hover:bg-slate-100 transition-colors inline-flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Generate New Prompt
-            </button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Generate Prompt Card */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-white shadow-lg">
+              <h3 className="text-2xl font-bold mb-3">Ready for today's prompt?</h3>
+              <p className="text-slate-300 mb-6">
+                Generate a personalized writing prompt to deepen your story world
+              </p>
+              <button
+                onClick={() => navigate('/prompt')}
+                className="bg-white text-slate-900 px-6 py-3 rounded-lg font-semibold hover:bg-slate-100 transition-colors inline-flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Generate New Prompt
+              </button>
+            </div>
+
+            {/* Daily Prompts Card */}
+            <div className="bg-gradient-to-br from-emerald-500 to-lime-500 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+              {dailyPromptsEnabled && (
+                <div className="absolute top-4 right-4">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-white/20 backdrop-blur-sm border border-white/30">
+                    ✓ Enabled
+                  </span>
+                </div>
+              )}
+              <div className="flex items-start justify-between mb-3 pr-20">
+                <h3 className="text-2xl font-bold">Daily Writing Prompts</h3>
+                <svg className="w-8 h-8 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <p className="text-emerald-50 mb-6">
+                {dailyPromptsEnabled 
+                  ? "You're all set! Daily prompts will arrive at your inbox. Check your settings to adjust." 
+                  : "Get a writing prompt delivered to your inbox every day. Build your streak! 🔥"}
+              </p>
+              <button
+                onClick={() => navigate('/settings')}
+                className="bg-white text-emerald-600 px-6 py-3 rounded-lg font-semibold hover:bg-emerald-50 transition-colors inline-flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {dailyPromptsEnabled ? 'Manage Settings' : 'Set Up Daily Prompts'}
+              </button>
+            </div>
           </div>
         )}
 

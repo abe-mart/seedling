@@ -1,0 +1,379 @@
+import { useState, useEffect } from 'react';
+import { Settings, Mail, Clock, BookOpen, Save, Loader2, Bell, ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+
+interface Book {
+  id: string;
+  title: string;
+}
+
+interface Preferences {
+  enabled: boolean;
+  delivery_time: string;
+  timezone: string;
+  focus_story_id: string | null;
+  email_format: string;
+  include_character: boolean;
+  include_plot: boolean;
+  include_worldbuilding: boolean;
+  include_dialogue: boolean;
+  include_conflict: boolean;
+  include_general: boolean;
+  focus_underdeveloped: boolean;
+  avoid_repetition_days: number;
+  include_context: boolean;
+  include_previous_answers: boolean;
+  send_streak_warning: boolean;
+  pause_after_skips: number;
+}
+
+export default function DailyPromptSettings() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [preferences, setPreferences] = useState<Preferences>({
+    enabled: false,
+    delivery_time: '09:00',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    focus_story_id: null,
+    email_format: 'minimal',
+    include_character: true,
+    include_plot: true,
+    include_worldbuilding: true,
+    include_dialogue: true,
+    include_conflict: true,
+    include_general: true,
+    focus_underdeveloped: true,
+    avoid_repetition_days: 7,
+    include_context: true,
+    include_previous_answers: true,
+    send_streak_warning: true,
+    pause_after_skips: 3
+  });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      // Load user's books
+      const booksRes = await fetch('/api/books', { credentials: 'include' });
+      if (booksRes.ok) {
+        const booksData = await booksRes.json();
+        setBooks(booksData);
+      }
+
+      // Load preferences
+      const prefsRes = await fetch('/api/daily-prompts/preferences', { credentials: 'include' });
+      if (prefsRes.ok) {
+        const prefsData = await prefsRes.json();
+        setPreferences(prev => ({ ...prev, ...prefsData }));
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load preferences');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+
+    try {
+      const response = await fetch('/api/daily-prompts/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(preferences)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save preferences');
+      }
+
+      toast.success('Preferences saved successfully!');
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      toast.error('Failed to save preferences');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-lime-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-lime-50">
+      <div className="max-w-4xl mx-auto p-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/')}
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
+          
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <Settings className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Daily Writing Prompts</h1>
+              <p className="text-gray-600">Configure your daily email prompts and preferences</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Enable/Disable */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Bell className="w-6 h-6 text-emerald-600" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Enable Daily Prompts</h2>
+                  <p className="text-sm text-gray-600">Receive a writing prompt via email every day</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.enabled}
+                  onChange={(e) => setPreferences({ ...preferences, enabled: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* Delivery Settings */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Clock className="w-6 h-6 text-emerald-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Delivery Settings</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Delivery Time
+                </label>
+                <input
+                  type="time"
+                  value={preferences.delivery_time}
+                  onChange={(e) => setPreferences({ ...preferences, delivery_time: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Timezone
+                </label>
+                <select
+                  value={preferences.timezone}
+                  onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                >
+                  <option value="America/New_York">Eastern Time</option>
+                  <option value="America/Chicago">Central Time</option>
+                  <option value="America/Denver">Mountain Time</option>
+                  <option value="America/Los_Angeles">Pacific Time</option>
+                  <option value="America/Phoenix">Arizona Time</option>
+                  <option value="America/Anchorage">Alaska Time</option>
+                  <option value="Pacific/Honolulu">Hawaii Time</option>
+                  <option value="Europe/London">London</option>
+                  <option value="Europe/Paris">Paris/Berlin</option>
+                  <option value="Asia/Tokyo">Tokyo</option>
+                  <option value="Australia/Sydney">Sydney</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Email Format */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Mail className="w-6 h-6 text-emerald-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Email Format</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { value: 'minimal', label: 'Minimal', desc: 'Just the prompt, clean and simple' },
+                { value: 'detailed', label: 'Detailed', desc: 'Includes story context and element details' },
+                { value: 'inspirational', label: 'Inspirational', desc: 'Motivational quotes and beautiful design' }
+              ].map((format) => (
+                <label
+                  key={format.value}
+                  className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                    preferences.email_format === format.value
+                      ? 'border-emerald-500 bg-emerald-50'
+                      : 'border-gray-200 hover:border-emerald-200'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="email_format"
+                    value={format.value}
+                    checked={preferences.email_format === format.value}
+                    onChange={(e) => setPreferences({ ...preferences, email_format: e.target.value })}
+                    className="sr-only"
+                  />
+                  <span className="font-medium text-gray-900 mb-1">{format.label}</span>
+                  <span className="text-sm text-gray-600">{format.desc}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Story Focus */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <BookOpen className="w-6 h-6 text-emerald-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Story Focus</h2>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Focus on Specific Story (Optional)
+              </label>
+              <select
+                value={preferences.focus_story_id || ''}
+                onChange={(e) => setPreferences({ ...preferences, focus_story_id: e.target.value || null })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              >
+                <option value="">All Stories</option>
+                {books.map((book) => (
+                  <option key={book.id} value={book.id}>
+                    {book.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Prompt Types */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Prompt Types</h2>
+            <p className="text-sm text-gray-600 mb-4">Choose which types of prompts you'd like to receive</p>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { key: 'include_character' as keyof Preferences, label: 'Character Development' },
+                { key: 'include_plot' as keyof Preferences, label: 'Plot Development' },
+                { key: 'include_worldbuilding' as keyof Preferences, label: 'Worldbuilding' },
+                { key: 'include_dialogue' as keyof Preferences, label: 'Dialogue' },
+                { key: 'include_conflict' as keyof Preferences, label: 'Conflict & Theme' },
+                { key: 'include_general' as keyof Preferences, label: 'General Writing' }
+              ].map((type) => (
+                <label key={type.key} className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={preferences[type.key] as boolean}
+                    onChange={(e) => setPreferences({ ...preferences, [type.key]: e.target.checked })}
+                    className="w-5 h-5 text-emerald-600 rounded focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700">{type.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Smart Features */}
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Smart Features</h2>
+
+            <div className="space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.focus_underdeveloped}
+                  onChange={(e) => setPreferences({ ...preferences, focus_underdeveloped: e.target.checked })}
+                  className="w-5 h-5 text-emerald-600 rounded focus:ring-2 focus:ring-emerald-500 mt-0.5"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Focus on Underdeveloped Elements</span>
+                  <p className="text-xs text-gray-600">Prioritize story elements with fewer responses</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.include_context}
+                  onChange={(e) => setPreferences({ ...preferences, include_context: e.target.checked })}
+                  className="w-5 h-5 text-emerald-600 rounded focus:ring-2 focus:ring-emerald-500 mt-0.5"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Include Element Context</span>
+                  <p className="text-xs text-gray-600">Show descriptions and details in emails</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.include_previous_answers}
+                  onChange={(e) => setPreferences({ ...preferences, include_previous_answers: e.target.checked })}
+                  className="w-5 h-5 text-emerald-600 rounded focus:ring-2 focus:ring-emerald-500 mt-0.5"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Include Previous Answers</span>
+                  <p className="text-xs text-gray-600">Show your recent responses for continuity</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preferences.send_streak_warning}
+                  onChange={(e) => setPreferences({ ...preferences, send_streak_warning: e.target.checked })}
+                  className="w-5 h-5 text-emerald-600 rounded focus:ring-2 focus:ring-emerald-500 mt-0.5"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">Send Streak Warnings</span>
+                  <p className="text-xs text-gray-600">Get notified when you're about to lose your streak</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-600 to-lime-600 text-white rounded-xl hover:from-emerald-700 hover:to-lime-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl font-medium text-lg"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save Preferences
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

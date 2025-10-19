@@ -7,6 +7,8 @@ import PromptInterface from './components/PromptInterface';
 import ProjectManager from './components/ProjectManager';
 import PromptHistory from './components/PromptHistory';
 import Stats from './components/Stats';
+import DailyPromptWrite from './components/DailyPromptWrite';
+import DailyPromptSettings from './components/DailyPromptSettings';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -40,6 +42,7 @@ function AppContent() {
   return (
     <Routes>
       <Route path="/auth" element={!user ? <Auth /> : <Navigate to="/" replace />} />
+      <Route path="/write/:logId" element={<DailyPromptWrite />} />
       <Route
         path="/"
         element={
@@ -93,6 +96,14 @@ function AppContent() {
         element={
           <ProtectedRoute>
             <Stats />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <DailyPromptSettings />
           </ProtectedRoute>
         }
       />

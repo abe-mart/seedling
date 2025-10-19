@@ -174,6 +174,18 @@ export const aiAPI = {
     }),
 };
 
+// ==================== DAILY PROMPTS ====================
+
+export const dailyPromptsAPI = {
+  getPreferences: () => fetchAPI('/api/daily-prompts/preferences'),
+  updatePreferences: (preferences: any) =>
+    fetchAPI('/api/daily-prompts/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
+    }),
+  getHistory: () => fetchAPI('/api/daily-prompts/history'),
+};
+
 // Export a default object with all APIs
 export const api = {
   profile: profileAPI,
@@ -183,4 +195,5 @@ export const api = {
   prompts: promptsAPI,
   responses: responsesAPI,
   ai: aiAPI,
+  dailyPrompts: dailyPromptsAPI,
 };

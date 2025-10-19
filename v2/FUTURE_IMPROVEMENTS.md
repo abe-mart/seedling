@@ -283,29 +283,99 @@ Smooth, intuitive onboarding that gently guides users without being intrusive. T
 ---
 
 ### 9. Prompt Scheduling & Reminders
-**Status**: Not implemented  
+**Status**: ✅ Implemented  
 **Effort**: High  
-**Impact**: Medium  
+**Impact**: High  
 
 **Features**:
-- Daily email reminder to write
-- Configurable reminder time
-- Streak risk warnings ("You're about to lose your streak!")
-- Push notifications (PWA)
+- ✅ Daily email prompts sent at user-configured time
+- ✅ Configurable delivery time with timezone support
+- ✅ Three email formats: minimal, detailed, inspirational
+- ✅ Magic link authentication for password-free writing
+- ✅ Intelligent prompt selection prioritizing underdeveloped elements
+- ✅ Skip functionality with streak protection
+- ✅ Streak warning emails after consecutive skips
+- ✅ Auto-pause after threshold (default: 3 skips)
+- ✅ Focus on specific story or all stories
+- ✅ Prompt type preferences (character, plot, worldbuilding, etc.)
+- ✅ Context-aware prompts with previous answers
+- ✅ Beautiful branded email templates
+- ✅ Dedicated `/write/:logId` page for responses
+- ✅ Comprehensive settings page at `/settings`
+- ✅ Hourly cron scheduler via PM2
+- ✅ Resend.com email service integration
 
 **Implementation**:
-- Use Supabase Edge Functions for scheduled emails
-- Store user preferences in profiles table
+- **Backend Services**: `dailyPromptsService.js`, `emailService.js`, `scheduler.js`
+- **Database**: `daily_prompt_preferences`, `daily_prompts_sent` tables
+- **Email**: Resend.com with magic link JWT authentication
+- **Scheduler**: Node-cron running hourly, managed by PM2
+- **Frontend**: `/write/:logId` page and `/settings` configuration page
+- **Smart Features**: Intelligent element selection, repetition avoidance, streak management
 
+**Database Schema**:
 ```sql
-ALTER TABLE profiles ADD COLUMN reminder_enabled BOOLEAN DEFAULT true;
-ALTER TABLE profiles ADD COLUMN reminder_time TIME DEFAULT '09:00:00';
-ALTER TABLE profiles ADD COLUMN reminder_timezone VARCHAR(50);
+-- User preferences with all configuration options
+CREATE TABLE daily_prompt_preferences (
+  user_id TEXT PRIMARY KEY,
+  enabled BOOLEAN DEFAULT false,
+  delivery_time TIME DEFAULT '09:00:00',
+  timezone TEXT DEFAULT 'America/New_York',
+  focus_story_id UUID,
+  email_format TEXT DEFAULT 'minimal',
+  -- Prompt type toggles
+  include_character BOOLEAN DEFAULT true,
+  include_plot BOOLEAN DEFAULT true,
+  include_worldbuilding BOOLEAN DEFAULT true,
+  include_dialogue BOOLEAN DEFAULT true,
+  include_conflict BOOLEAN DEFAULT true,
+  include_general BOOLEAN DEFAULT true,
+  -- Smart features
+  focus_underdeveloped BOOLEAN DEFAULT true,
+  avoid_repetition_days INTEGER DEFAULT 7,
+  include_context BOOLEAN DEFAULT true,
+  include_previous_answers BOOLEAN DEFAULT true,
+  send_streak_warning BOOLEAN DEFAULT true,
+  pause_after_skips INTEGER DEFAULT 3,
+  consecutive_skips INTEGER DEFAULT 0,
+  last_prompt_sent_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Prompt tracking with engagement metrics
+CREATE TABLE daily_prompts_sent (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  prompt_id UUID NOT NULL,
+  element_id UUID,
+  sent_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  opened_at TIMESTAMP WITH TIME ZONE,
+  responded_at TIMESTAMP WITH TIME ZONE,
+  response_id UUID,
+  skipped BOOLEAN DEFAULT false,
+  skip_reason TEXT,
+  email_format TEXT NOT NULL,
+  resend_email_id TEXT
+);
 ```
+
+**Files Created**:
+- `v2/database/daily_prompts_migration.sql`
+- `v2/backend/services/dailyPromptsService.js`
+- `v2/backend/services/emailService.js`
+- `v2/backend/scheduler.js`
+- `v2/src/components/DailyPromptWrite.tsx`
+- `v2/src/components/DailyPromptSettings.tsx`
+- `v2/DAILY_PROMPTS_IMPLEMENTATION.md` (full documentation)
+
+**PM2 Processes**:
+- `seedling-v2` - Main web server
+- `seedling-scheduler` - Daily prompts cron scheduler
+
+See `DAILY_PROMPTS_IMPLEMENTATION.md` for complete implementation details.
 
 ---
 
-### 9. Rich Text Editing
+### 10. Rich Text Editing
 **Status**: Not implemented (plain text only)  
 **Effort**: Medium  
 **Impact**: Medium  
@@ -326,7 +396,7 @@ npm install @tiptap/react @tiptap/starter-kit  # Rich text WYSIWYG
 
 ---
 
-### 10. Enhanced Stats Dashboard
+### 11. Enhanced Stats Dashboard
 **Status**: Basic stats exist  
 **Effort**: High  
 **Impact**: Medium  
@@ -1053,3 +1123,5 @@ My Ideas
 Auto summarize button to move responses to descriptions.  
 Onboarding for new users.  
 Cool graph under streak badge.
+
+high vulnerability?

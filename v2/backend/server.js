@@ -456,6 +456,193 @@ app.post('/api/enhance-element-description', requireAuth, async (req, res) => {
   }
 });
 
+// ==================== DAILY PROMPTS ====================
+
+import {
+  getUserPreferences,
+  updateUserPreferences,
+  getPromptLog,
+  markPromptOpened,
+  markPromptResponded,
+  markPromptSkipped
+} from './services/dailyPromptsService.js';
+import { verifyMagicLinkToken } from './services/emailService.js';
+
+// Get user's daily prompt preferences
+app.get('/api/daily-prompts/preferences', requireAuth, async (req, res) => {
+  try {
+    const preferences = await getUserPreferences(req.user.id);
+    res.json(preferences);
+  } catch (error) {
+    console.error('Error getting daily prompt preferences:', error);
+    res.status(500).json({ error: 'Failed to get preferences' });
+  }
+});
+
+// Update user's daily prompt preferences
+app.put('/api/daily-prompts/preferences', requireAuth, async (req, res) => {
+  try {
+    const preferences = await updateUserPreferences(req.user.id, req.body);
+    res.json(preferences);
+  } catch (error) {
+    console.error('Error updating daily prompt preferences:', error);
+    res.status(500).json({ error: 'Failed to update preferences' });
+  }
+});
+
+// Get prompt details by log ID (with magic link token)
+app.get('/api/daily-prompts/:logId', async (req, res) => {
+  try {
+    const { logId } = req.params;
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    // Verify token
+    const payload = verifyMagicLinkToken(token);
+    if (!payload || payload.promptLogId !== parseInt(logId)) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Get prompt details
+    const promptLog = await getPromptLog(logId);
+    
+    if (!promptLog) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    if (promptLog.user_id !== payload.userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    // Mark as opened if not already
+    if (!promptLog.opened_at) {
+      await markPromptOpened(logId);
+    }
+
+    res.json(promptLog);
+  } catch (error) {
+    console.error('Error getting prompt:', error);
+    res.status(500).json({ error: 'Failed to get prompt' });
+  }
+});
+
+// Submit response to daily prompt (with magic link token)
+app.post('/api/daily-prompts/:logId/respond', async (req, res) => {
+  try {
+    const { logId } = req.params;
+    const { token, responseText } = req.body;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    // Verify token
+    const payload = verifyMagicLinkToken(token);
+    if (!payload || payload.promptLogId !== parseInt(logId)) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Get prompt details
+    const promptLog = await getPromptLog(logId);
+    
+    if (!promptLog) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    if (promptLog.user_id !== payload.userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    // Create response
+    const result = await pool.query(
+      `INSERT INTO responses (prompt_id, user_id, response_text, element_tags, word_count, completed_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       RETURNING *`,
+      [
+        promptLog.prompt_id,
+        promptLog.user_id,
+        responseText,
+        promptLog.element_references,
+        responseText.split(/\s+/).filter(w => w).length
+      ]
+    );
+
+    // Mark prompt as responded
+    await markPromptResponded(logId, result.rows[0].id);
+
+    res.json({ success: true, response: result.rows[0] });
+  } catch (error) {
+    console.error('Error submitting response:', error);
+    res.status(500).json({ error: 'Failed to submit response' });
+  }
+});
+
+// Skip daily prompt (with magic link token)
+app.post('/api/daily-prompts/skip/:logId', async (req, res) => {
+  try {
+    const { logId } = req.params;
+    const { token } = req.query;
+    const { reason } = req.body;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    // Verify token
+    const payload = verifyMagicLinkToken(token);
+    if (!payload || payload.promptLogId !== parseInt(logId)) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Get prompt details
+    const promptLog = await getPromptLog(logId);
+    
+    if (!promptLog) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    if (promptLog.user_id !== payload.userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    // Mark as skipped
+    const result = await markPromptSkipped(logId, reason || 'User skipped');
+
+    res.json({ success: true, paused: result.paused });
+  } catch (error) {
+    console.error('Error skipping prompt:', error);
+    res.status(500).json({ error: 'Failed to skip prompt' });
+  }
+});
+
+// Get user's daily prompt history
+app.get('/api/daily-prompts/history', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT dps.*, p.prompt_text, p.prompt_type,
+              se.name as element_name, b.title as book_title,
+              r.response_text, r.word_count
+       FROM daily_prompts_sent dps
+       JOIN prompts p ON dps.prompt_id = p.id
+       LEFT JOIN story_elements se ON dps.element_id = se.id
+       LEFT JOIN books b ON p.book_id = b.id
+       LEFT JOIN responses r ON dps.response_id = r.id
+       WHERE dps.user_id = $1
+       ORDER BY dps.sent_at DESC
+       LIMIT 30`,
+      [req.user.id]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error('Error getting prompt history:', error);
+    res.status(500).json({ error: 'Failed to get history' });
+  }
+});
+
 // ==================== SERVE FRONTEND ====================
 
 // Serve static files from the React app (AFTER all API routes)
