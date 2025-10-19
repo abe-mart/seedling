@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag, Edit2, Save, X } from 'lucide-react';
 import { Database } from '../lib/database.types';
 import { api } from '../lib/api';
 import { SkeletonPromptCard } from './SkeletonLoader';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 type Prompt = Database['public']['Tables']['prompts']['Row'];
 type Response = Database['public']['Tables']['responses']['Row'];
@@ -37,6 +38,9 @@ export default function PromptHistory() {
   const [elementMap, setElementMap] = useState<Map<string, StoryElement>>(new Map());
   const [bookMap, setBookMap] = useState<Map<string, Book>>(new Map());
   const [responseMap, setResponseMap] = useState<Map<string, Response[]>>(new Map());
+  const [editingResponseId, setEditingResponseId] = useState<string | null>(null);
+  const [editedText, setEditedText] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadPrompts();
@@ -141,6 +145,56 @@ export default function PromptHistory() {
       }
     } catch (error) {
       console.error('Error loading responses:', error);
+    }
+  };
+
+  const handleStartEdit = (response: Response) => {
+    setEditingResponseId(response.id);
+    setEditedText(response.response_text);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingResponseId(null);
+    setEditedText('');
+  };
+
+  const handleSaveEdit = async (responseId: string) => {
+    if (!editedText.trim()) {
+      toast.error('Response cannot be empty');
+      return;
+    }
+
+    setSaving(true);
+    const toastId = toast.loading('Saving changes...');
+
+    try {
+      const wordCount = editedText.trim().split(/\s+/).length;
+      
+      await api.responses.update(responseId, {
+        response_text: editedText,
+        word_count: wordCount,
+      });
+
+      // Update local state
+      const updatedMap = new Map(responseMap);
+      for (const [promptId, responses] of updatedMap.entries()) {
+        const updatedResponses = responses.map(r => 
+          r.id === responseId 
+            ? { ...r, response_text: editedText, word_count: wordCount, updated_at: new Date().toISOString() }
+            : r
+        );
+        updatedMap.set(promptId, updatedResponses);
+      }
+      setResponseMap(updatedMap);
+
+      setEditingResponseId(null);
+      setEditedText('');
+      toast.success('Response updated successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Error updating response:', error);
+      toast.error('Failed to update response. Please try again.', { id: toastId });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -284,14 +338,62 @@ export default function PromptHistory() {
 
                   {responses.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-slate-200">
-                      {responses.map((response) => (
-                        <div key={response.id} className="text-slate-700 text-sm">
-                          <div className="mb-2 text-slate-500 text-xs">
-                            {response.word_count} words
+                      {responses.map((response) => {
+                        const isEditing = editingResponseId === response.id;
+                        
+                        return (
+                          <div key={response.id} className="text-slate-700 text-sm">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="text-slate-500 text-xs">
+                                {response.word_count} words
+                                {response.updated_at && response.updated_at !== response.created_at && (
+                                  <span className="ml-2">(edited)</span>
+                                )}
+                              </div>
+                              {!isEditing && (
+                                <button
+                                  onClick={() => handleStartEdit(response)}
+                                  className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                  Edit
+                                </button>
+                              )}
+                            </div>
+                            
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  value={editedText}
+                                  onChange={(e) => setEditedText(e.target.value)}
+                                  className="w-full min-h-[150px] px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent resize-y"
+                                  disabled={saving}
+                                />
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleSaveEdit(response.id)}
+                                    disabled={saving}
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 text-xs font-medium"
+                                  >
+                                    <Save className="w-3 h-3" />
+                                    {saving ? 'Saving...' : 'Save'}
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    disabled={saving}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 text-xs font-medium"
+                                  >
+                                    <X className="w-3 h-3" />
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="whitespace-pre-wrap">{response.response_text}</p>
+                            )}
                           </div>
-                          <p className="whitespace-pre-wrap">{response.response_text}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

@@ -85,6 +85,8 @@ CRITICAL RULES:
 - Focus on concrete details, not abstract concepts
 - Reference story elements by name when possible
 - Build on previous answers if provided
+- You will be given extensive context (descriptions, notes, and previous Q&A), but you DON'T need to use all of it
+- Focus on asking about something new or unexplored, or build naturally on recent answers
 - DO NOT ask the author to write scenes or dialogue
 - DO NOT ask philosophical or overly complex questions
 - DO NOT try to worldbuild for them - draw out their existing ideas`;
@@ -145,16 +147,18 @@ function buildUserPrompt(storyContext, elements, elementHistory, mode) {
   });
 
   if (elementHistory.length > 0) {
-    prompt += `\nPREVIOUS QUESTIONS & ANSWERS:\n`;
+    prompt += `\nPREVIOUS QUESTIONS & ANSWERS ABOUT THESE ELEMENTS:\n`;
+    prompt += `(You don't need to reference all of this - focus on what's relevant or unexplored)\n`;
     elementHistory.forEach(({ element, prompts }) => {
       if (prompts.length > 0) {
         prompt += `\nFor ${element.element_type} "${element.name}":\n`;
-        prompts.slice(-3).forEach((p, idx) => {
+        prompts.forEach((p, idx) => {
           prompt += `Q${idx + 1}: ${p.prompt_text}\n`;
           if (p.responses && p.responses.length > 0) {
             const response = p.responses[0];
-            const truncatedResponse = response.response_text.length > 200 
-              ? response.response_text.substring(0, 200) + '...' 
+            // Truncate very long responses but keep more context
+            const truncatedResponse = response.response_text.length > 400 
+              ? response.response_text.substring(0, 400) + '...' 
               : response.response_text;
             prompt += `A${idx + 1}: ${truncatedResponse}\n`;
           }
@@ -164,7 +168,7 @@ function buildUserPrompt(storyContext, elements, elementHistory, mode) {
   }
 
   prompt += `\nPROMPT MODE: ${mode}\n`;
-  prompt += `\nGenerate ONE specific, thought-provoking question that helps the author develop these story elements further. Reference the element by name in your question.`;
+  prompt += `\nGenerate ONE specific, thought-provoking question that helps the author develop these story elements further. Reference the element by name in your question. Build on what they've already explored or ask about something new.`;
 
   return prompt;
 }

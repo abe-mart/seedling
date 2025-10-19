@@ -75,22 +75,25 @@ Replace empty states with skeleton loaders while data loads:
 ---
 
 ### 3. Prompt Response Editing
-**Status**: Not implemented  
+**Status**: ✅ Implemented  
 **Effort**: Medium  
 **Impact**: High  
 
-**Current limitation**: Users cannot edit responses after saving them.
+**Features**:
+- ✅ Edit button on each saved response in history
+- ✅ In-place editing with textarea
+- ✅ Word count recalculation on save
+- ✅ Updated timestamp tracking
+- ✅ Toast notifications for save/error states
+- ✅ Cancel editing without saving
 
-**Proposed solution**:
-- Add "Edit" button to saved responses
-- Allow in-place editing of response text
-- Save edits with "updated_at" timestamp
-- Show edit history (optional)
+**Implementation**:
+- Edit mode toggled with state (`editingResponseId`)
+- Backend endpoint already supported `updated_at` field
+- API client `responses.update()` method used
+- UI shows "(edited)" indicator when response has been modified
 
-**Database change needed**:
-```sql
-ALTER TABLE responses ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
-```
+**Database**: `updated_at` column already existed in responses table
 
 ---
 

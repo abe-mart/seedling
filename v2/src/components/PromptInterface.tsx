@@ -145,9 +145,38 @@ export default function PromptInterface() {
       // Get selected or determine which elements to use
       const selectedElements = elements.filter((el) => selectedTags.includes(el.id));
       
-      // For now, simplified without loading full history
-      // You can expand this if needed
+      // Build element history by fetching all prompts for the selected book
       const elementHistory: any[] = [];
+      
+      if (selectedElements.length > 0) {
+        // Get all prompts for this book
+        const allPrompts = await api.prompts.list({ book_id: selectedBook });
+        
+        // For each selected element, find all prompts that reference it
+        for (const element of selectedElements) {
+          const elementPrompts = allPrompts.filter((prompt: any) => 
+            prompt.element_references?.includes(element.id)
+          );
+          
+          if (elementPrompts.length > 0) {
+            // For each prompt, fetch its responses
+            const promptsWithResponses = await Promise.all(
+              elementPrompts.map(async (prompt: any) => {
+                const responses = await api.responses.list(prompt.id);
+                return {
+                  ...prompt,
+                  responses: responses
+                };
+              })
+            );
+            
+            elementHistory.push({
+              element: element,
+              prompts: promptsWithResponses
+            });
+          }
+        }
+      }
 
       // Generate AI prompt via backend
       const result = await api.ai.generatePrompt({
