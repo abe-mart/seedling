@@ -6,6 +6,7 @@ import { Flame, BookOpen, LogOut, Plus, Lightbulb, User, Check, X, Sprout } from
 import PromptInterface from './PromptInterface';
 import ProjectManager from './ProjectManager';
 import PromptHistory from './PromptHistory';
+import toast from 'react-hot-toast';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
@@ -88,8 +89,10 @@ export default function Dashboard() {
       await api.profile.update({ display_name: displayNameValue.trim() });
       setProfile(prev => prev ? { ...prev, display_name: displayNameValue.trim() } : null);
       setEditingDisplayName(false);
+      toast.success('Display name updated!');
     } catch (error) {
       console.error('Error saving display name:', error);
+      toast.error('Failed to update display name');
     } finally {
       setSavingDisplayName(false);
     }

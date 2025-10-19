@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Sprout, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,10 +20,20 @@ export default function Auth() {
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
-        if (error) setError(error.message);
+        if (error) {
+          setError(error.message);
+          toast.error('Failed to sign in. Please check your credentials.');
+        } else {
+          toast.success('Welcome back!');
+        }
       } else {
         const { error } = await signUp(email, password, displayName);
-        if (error) setError(error.message);
+        if (error) {
+          setError(error.message);
+          toast.error('Failed to create account. Please try again.');
+        } else {
+          toast.success('Account created successfully!');
+        }
       }
     } finally {
       setLoading(false);

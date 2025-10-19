@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 type Book = Database['public']['Tables']['books']['Row'];
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
@@ -139,6 +140,7 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
     if (!user || !selectedBook) return;
 
     setLoading(true);
+    const toastId = toast.loading('Generating prompt...');
     try {
       // Get selected book details from state
       const bookData = books.find((b) => b.id === selectedBook);
@@ -186,9 +188,10 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
         generated_at: new Date().toISOString(),
       } as Prompt);
 
+      toast.success('Prompt generated!', { id: toastId });
     } catch (error) {
       console.error('Error generating prompt:', error);
-      alert('Failed to generate prompt. Please check your OpenAI API key in .env file.');
+      toast.error('Failed to generate prompt. Please check your OpenAI API key.', { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -267,6 +270,7 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
     if (!user || !currentPrompt || !responseText.trim()) return;
 
     setSaving(true);
+    const toastId = toast.loading('Saving response...');
     try {
       let savedPromptId = currentPrompt.id;
 
@@ -317,6 +321,8 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
       setGeneratedElementRefs([]);
       onRefresh();
 
+      toast.success('Response saved successfully!', { id: toastId });
+
       // Navigate to the first story element that was referenced, if available
       if (onNavigateToElement && generatedElementRefs.length > 0 && selectedBook) {
         const firstElementId = generatedElementRefs[0];
@@ -324,7 +330,7 @@ export default function PromptInterface({ onBack, onRefresh, onViewHistory, onNa
       }
     } catch (error) {
       console.error('Error saving response:', error);
-      alert('Failed to save response. Please try again.');
+      toast.error('Failed to save response. Please try again.', { id: toastId });
     } finally {
       setSaving(false);
     }

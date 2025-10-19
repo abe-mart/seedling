@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Save, Calendar, MessageSquare, Lightbulb, Edit3 } from 'lucide-react';
 import { api } from '../lib/api';
 import { Database } from '../lib/database.types';
+import toast from 'react-hot-toast';
 
 type StoryElement = Database['public']['Tables']['story_elements']['Row'];
 type Prompt = Database['public']['Tables']['prompts']['Row'];
@@ -74,8 +75,10 @@ export default function StoryElementDetail({ element, onClose, onUpdate, onNavig
       
       setIsEditing(false);
       onUpdate();
+      toast.success('Element updated successfully!');
     } catch (error) {
       console.error('Error saving element:', error);
+      toast.error('Failed to update element');
     }
     
     setSaving(false);

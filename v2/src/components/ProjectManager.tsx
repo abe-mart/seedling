@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import StoryElementDetail from './StoryElementDetail';
+import toast from 'react-hot-toast';
 
 type Series = Database['public']['Tables']['series']['Row'];
 type Book = Database['public']['Tables']['books']['Row'];
@@ -106,8 +107,10 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
       setShowModal(null);
       setFormData({ title: '', description: '', elementType: 'character' });
       loadProjects();
+      toast.success('Story created successfully!');
     } catch (error) {
       console.error('Error creating book:', error);
+      toast.error('Failed to create story');
     }
   };
 
@@ -124,8 +127,10 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
       setShowModal(null);
       setFormData({ title: '', description: '', elementType: 'character' });
       loadElements(selectedBook.id);
+      toast.success('Element created successfully!');
     } catch (error) {
       console.error('Error creating element:', error);
+      toast.error('Failed to create element');
     }
   };
 
@@ -137,8 +142,10 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
       if (selectedBook) {
         loadElements(selectedBook.id);
       }
+      toast.success('Element deleted successfully');
     } catch (error) {
       console.error('Error deleting element:', error);
+      toast.error('Failed to delete element');
     }
   };
 
@@ -154,9 +161,10 @@ export default function ProjectManager({ onBack, initialBookId, initialElementId
         setSelectedElement(null);
       }
       loadProjects();
+      toast.success('Story deleted successfully');
     } catch (error) {
       console.error('Error deleting book:', error);
-      alert('Failed to delete story. Please try again.');
+      toast.error('Failed to delete story');
     }
   };
 
