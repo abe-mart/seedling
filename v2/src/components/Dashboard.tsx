@@ -161,7 +161,44 @@ export default function Dashboard() {
             </div>
 
             {/* Stats Badges & Sign Out */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 md:gap-6">
+              {/* Mobile Compact Stats - Icon badges only */}
+              <div className="flex md:hidden items-center gap-1.5">
+                <button
+                  onClick={() => navigate('/stats')}
+                  className="relative flex items-center justify-center w-9 h-9 bg-orange-100 dark:bg-orange-950 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900 transition-colors touch-active"
+                  aria-label={`${profile?.current_streak || 0} day streak`}
+                >
+                  <Flame className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-orange-600 dark:bg-orange-500 text-white text-[10px] font-bold rounded-full shadow-sm">
+                    {profile?.current_streak || 0}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/projects')}
+                  className="relative flex items-center justify-center w-9 h-9 bg-blue-100 dark:bg-blue-950 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors touch-active"
+                  aria-label={`${books.length} ${books.length === 1 ? 'story' : 'stories'}`}
+                >
+                  <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-blue-600 dark:bg-blue-500 text-white text-[10px] font-bold rounded-full shadow-sm">
+                    {books.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/history')}
+                  className="relative flex items-center justify-center w-9 h-9 bg-green-100 dark:bg-green-950 rounded-lg hover:bg-green-200 dark:hover:bg-green-900 transition-colors touch-active"
+                  aria-label={`${totalPromptCount} prompts`}
+                >
+                  <Lightbulb className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-green-600 dark:bg-green-500 text-white text-[10px] font-bold rounded-full shadow-sm">
+                    {totalPromptCount}
+                  </span>
+                </button>
+              </div>
+
+              {/* Desktop Stats Badges */}
               <div className="hidden md:flex items-center gap-3">
                 <button
                   onClick={() => navigate('/stats')}
