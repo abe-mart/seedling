@@ -464,9 +464,10 @@ import {
   getPromptLog,
   markPromptOpened,
   markPromptResponded,
-  markPromptSkipped
+  markPromptSkipped,
+  selectPromptForUser
 } from './services/dailyPromptsService.js';
-import { verifyMagicLinkToken } from './services/emailService.js';
+import { verifyMagicLinkToken, sendDailyPromptEmail } from './services/emailService.js';
 
 // Get user's daily prompt preferences
 app.get('/api/daily-prompts/preferences', requireAuth, async (req, res) => {
@@ -487,6 +488,74 @@ app.put('/api/daily-prompts/preferences', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error updating daily prompt preferences:', error);
     res.status(500).json({ error: 'Failed to update preferences' });
+  }
+});
+
+// Send a test email
+app.post('/api/daily-prompts/send-test-email', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+    
+    // Get user preferences
+    const preferences = await getUserPreferences(userId);
+    
+    if (!preferences.enabled) {
+      return res.status(400).json({ 
+        error: 'Daily prompts are not enabled. Please enable them first.' 
+      });
+    }
+    
+    // Get user's books to select a prompt
+    const { rows: books } = await pool.query(
+      'SELECT * FROM books WHERE user_id = $1 LIMIT 1',
+      [userId]
+    );
+    
+    if (books.length === 0) {
+      return res.status(400).json({ 
+        error: 'No books found. Create a book with story elements first.' 
+      });
+    }
+    
+    // Select a prompt for the user
+    const promptData = await selectPromptForUser(userId, preferences);
+    
+    if (!promptData) {
+      return res.status(400).json({ 
+        error: 'Could not generate a prompt. Make sure you have story elements in your book.' 
+      });
+    }
+    
+    // Create a log entry for the test email
+    const { rows: [promptLog] } = await pool.query(
+      `INSERT INTO daily_prompts_sent (user_id, prompt_id, element_id, email_format, sent_at, is_test)
+       VALUES ($1, $2, $3, $4, NOW(), true)
+       RETURNING id`,
+      [userId, promptData.prompt.id, promptData.element.id, preferences.email_format]
+    );
+    
+    // Send the email
+    const resendEmailId = await sendDailyPromptEmail(
+      userEmail,
+      { ...promptData, promptLogId: promptLog.id },
+      preferences
+    );
+    
+    // Update log with Resend email ID
+    await pool.query(
+      'UPDATE daily_prompts_sent SET resend_email_id = $1 WHERE id = $2',
+      [resendEmailId, promptLog.id]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Test email sent! Check your inbox (and spam folder).',
+      emailId: resendEmailId 
+    });
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ error: 'Failed to send test email' });
   }
 });
 

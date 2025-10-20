@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Clock, BookOpen, Save, Loader2, Bell, ChevronLeft } from 'lucide-react';
+import { Settings, Mail, Clock, BookOpen, Save, Loader2, Bell, ChevronLeft, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -32,6 +32,7 @@ export default function DailyPromptSettings() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [preferences, setPreferences] = useState<Preferences>({
     enabled: false,
@@ -101,6 +102,39 @@ export default function DailyPromptSettings() {
       toast.error('Failed to save preferences');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSendTestEmail() {
+    setSendingTest(true);
+
+    try {
+      const response = await fetch('/api/daily-prompts/send-test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send test email');
+      }
+
+      toast.success(
+        (t) => (
+          <div>
+            <div className="font-semibold mb-1">Test email sent! 📧</div>
+            <div className="text-sm">Check your inbox and spam folder. It may take a minute to arrive.</div>
+          </div>
+        ),
+        { duration: 6000 }
+      );
+    } catch (error: any) {
+      console.error('Error sending test email:', error);
+      toast.error(error.message || 'Failed to send test email');
+    } finally {
+      setSendingTest(false);
     }
   }
 
@@ -352,8 +386,51 @@ export default function DailyPromptSettings() {
             </div>
           </div>
 
+          {/* Test Email Button - At bottom for better UX flow */}
+          {preferences.enabled && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-2xl shadow-lg p-6 border-2 border-blue-200 dark:border-blue-800 transition-colors">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <Send className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Ready to test?</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      Send yourself a test email to preview what you'll receive and make sure everything works.
+                    </p>
+                    <div className="flex items-start gap-2 text-xs text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 rounded-lg px-3 py-2 mt-2">
+                      <span className="text-base">💡</span>
+                      <div>
+                        <strong>Tip:</strong> The email may take up to a minute to arrive. If you don't see it in your inbox, 
+                        <strong> check your spam folder</strong> and mark it as "Not Spam" to ensure future emails arrive correctly.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleSendTestEmail}
+                  disabled={sendingTest}
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl font-medium text-lg whitespace-nowrap flex-shrink-0"
+                >
+                  {sendingTest ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Send Test Email
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Save Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
             <button
               onClick={handleSave}
               disabled={saving}
