@@ -1,3 +1,13 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from project root (one directory up from backend/)
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
 import cron from 'node-cron';
 import { formatInTimeZone } from 'date-fns-tz';
 import db from './db.js';
@@ -11,6 +21,8 @@ import {
 import { sendDailyPromptEmail, sendStreakWarningEmail } from './services/emailService.js';
 
 console.log('🕐 Daily Prompts Scheduler starting...');
+console.log('🔑 Resend API Key configured:', process.env.RESEND_API_KEY ? 'YES' : 'NO');
+console.log('📧 From email:', process.env.RESEND_FROM_EMAIL || 'not set');
 
 /**
  * Main scheduler - runs every hour to check for users who need prompts

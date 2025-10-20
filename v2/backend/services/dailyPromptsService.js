@@ -141,14 +141,17 @@ export async function selectPromptForUser(userId, preferences) {
     }
 
     // Generate the AI prompt
-    const promptText = await generateAIPrompt({
-      bookTitle: context.bookTitle,
-      promptType: promptType,
-      elementType: context.elementType,
-      elementName: context.elementName,
-      elementDescription: context.description,
-      previousAnswers: context.previousAnswers
+    const result = await generateAIPrompt({
+      promptMode: promptType,
+      storyContext: {
+        bookTitle: context.bookTitle,
+        bookDescription: book.description || null
+      },
+      selectedElements: [selectedElement],
+      elementHistory: [] // Don't pass history for now to get it working
     });
+    
+    const promptText = result.prompt;
 
     // Save the prompt to database
     const { rows: [prompt] } = await db.query(
