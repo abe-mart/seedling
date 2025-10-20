@@ -280,6 +280,82 @@ export async function markPromptResponded(promptLogId, responseId) {
        WHERE user_id = $1`,
       [log.user_id]
     );
+    
+    // Update streak tracking in profiles table
+    await updateUserStreak(log.user_id);
+  }
+}
+
+/**
+ * Update user's streak when they respond to a prompt
+ */
+async function updateUserStreak(userId) {
+  try {
+    // Get current profile data
+    const { rows: [profile] } = await db.query(
+      `SELECT current_streak, longest_streak, last_prompt_date
+       FROM profiles
+       WHERE user_id = $1`,
+      [userId]
+    );
+    
+    if (!profile) {
+      console.warn(`No profile found for user ${userId}`);
+      return;
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    
+    const lastPromptDate = profile.last_prompt_date 
+      ? new Date(profile.last_prompt_date) 
+      : null;
+    
+    if (lastPromptDate) {
+      lastPromptDate.setHours(0, 0, 0, 0); // Normalize to start of day
+    }
+    
+    let newStreak = profile.current_streak || 0;
+    
+    if (!lastPromptDate) {
+      // First prompt ever
+      newStreak = 1;
+    } else {
+      const daysDiff = Math.floor((today - lastPromptDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 0) {
+        // Same day - don't increment streak, but update last_prompt_date
+        // Keep current streak as is
+      } else if (daysDiff === 1) {
+        // Consecutive day - increment streak
+        newStreak = newStreak + 1;
+      } else {
+        // Streak broken - reset to 1
+        newStreak = 1;
+      }
+    }
+    
+    // Calculate new longest streak
+    const newLongestStreak = Math.max(
+      profile.longest_streak || 0,
+      newStreak
+    );
+    
+    // Update profile
+    await db.query(
+      `UPDATE profiles
+       SET current_streak = $1,
+           longest_streak = $2,
+           last_prompt_date = CURRENT_DATE,
+           updated_at = NOW()
+       WHERE user_id = $3`,
+      [newStreak, newLongestStreak, userId]
+    );
+    
+    console.log(`✅ Updated streak for user ${userId}: ${newStreak} (longest: ${newLongestStreak})`);
+  } catch (error) {
+    console.error('Error updating user streak:', error);
+    // Don't throw - streak tracking shouldn't block the response
   }
 }
 
