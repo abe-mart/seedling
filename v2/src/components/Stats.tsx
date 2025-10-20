@@ -144,29 +144,29 @@ export default function Stats() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center transition-colors">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your stats...</p>
+          <p className="text-slate-600 dark:text-slate-400">Loading your stats...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/')}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Your Writing Stats</h1>
-              <p className="text-sm text-slate-600">Track your creative journey</p>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Your Writing Stats</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Track your creative journey</p>
             </div>
           </div>
         </div>
@@ -219,14 +219,14 @@ export default function Stats() {
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Daily Activity - Last 30 Days */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <div className="p-2 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Daily Word Count</h3>
-                <p className="text-sm text-slate-600">Last 30 days</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Daily Word Count</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Last 30 days</p>
               </div>
             </div>
             {dailyStats.length > 0 ? (
@@ -266,21 +266,21 @@ export default function Stats() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-64 flex items-center justify-center text-slate-400">
+              <div className="h-64 flex items-center justify-center text-slate-400 dark:text-slate-500">
                 No data yet - start writing!
               </div>
             )}
           </div>
 
           {/* Monthly Trends */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Calendar className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Monthly Progress</h3>
-                <p className="text-sm text-slate-600">Last 6 months</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Monthly Progress</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Last 6 months</p>
               </div>
             </div>
             {monthlyStats.length > 0 ? (
@@ -312,7 +312,7 @@ export default function Stats() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-64 flex items-center justify-center text-slate-400">
+              <div className="h-64 flex items-center justify-center text-slate-400 dark:text-slate-500">
                 No monthly data yet
               </div>
             )}
@@ -320,29 +320,29 @@ export default function Stats() {
         </div>
 
         {/* Additional Stats */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-900 mb-4">Quick Stats</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Quick Stats</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-lime-50 rounded-lg border border-emerald-200">
-              <div className="text-3xl font-bold text-emerald-700 mb-1">
+            <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-lime-50 dark:from-emerald-950 dark:to-lime-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <div className="text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">
                 {averageWordsPerDay}
               </div>
-              <div className="text-sm text-slate-600">Avg Words/Day</div>
-              <div className="text-xs text-slate-500 mt-1">(Active days)</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">Avg Words/Day</div>
+              <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">(Active days)</div>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-              <div className="text-3xl font-bold text-blue-700 mb-1">
+            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="text-3xl font-bold text-blue-700 dark:text-blue-400 mb-1">
                 {totalPrompts > 0 ? Math.round(totalWords / totalPrompts) : 0}
               </div>
-              <div className="text-sm text-slate-600">Avg Words/Prompt</div>
-              <div className="text-xs text-slate-500 mt-1">Response length</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">Avg Words/Prompt</div>
+              <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">Response length</div>
             </div>
-            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-              <div className="text-3xl font-bold text-purple-700 mb-1">
+            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-1">
                 {dailyStats.filter(d => d.wordCount > 0).length}
               </div>
-              <div className="text-sm text-slate-600">Active Days</div>
-              <div className="text-xs text-slate-500 mt-1">Last 30 days</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">Active Days</div>
+              <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">Last 30 days</div>
             </div>
           </div>
         </div>

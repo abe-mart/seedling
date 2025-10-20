@@ -273,19 +273,19 @@ export default function PromptHistory() {
   }, [prompts]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Back</span>
             </button>
-            <div className="h-6 w-px bg-slate-300" />
-            <h1 className="text-2xl font-bold text-slate-900">Prompt History</h1>
+            <div className="h-6 w-px bg-slate-300 dark:bg-slate-600" />
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Prompt History</h1>
           </div>
         </div>
       </header>
@@ -295,13 +295,13 @@ export default function PromptHistory() {
         <div className="mb-6 space-y-4">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               placeholder="Search prompts and responses..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors"
             />
           </div>
 
@@ -309,7 +309,7 @@ export default function PromptHistory() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               <Filter className="w-4 h-4" />
               <span className="font-medium">Filters</span>
@@ -317,7 +317,7 @@ export default function PromptHistory() {
             </button>
             
             {(searchQuery || selectedBookFilter !== 'all' || selectedTypeFilter !== 'all' || answerStatusFilter !== 'all') && (
-              <div className="text-sm text-slate-600">
+              <div className="text-sm text-slate-600 dark:text-slate-400">
                 Showing {filteredPrompts.length} of {prompts.length} prompts
               </div>
             )}
@@ -325,15 +325,15 @@ export default function PromptHistory() {
 
           {/* Filter Options */}
           {showFilters && (
-            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4">
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-4 transition-colors">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Book Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Story</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Story</label>
                   <select
                     value={selectedBookFilter}
                     onChange={(e) => setSelectedBookFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                   >
                     <option value="all">All Stories</option>
                     {uniqueBooks.map(book => (
@@ -344,11 +344,11 @@ export default function PromptHistory() {
 
                 {/* Type Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Prompt Type</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Prompt Type</label>
                   <select
                     value={selectedTypeFilter}
                     onChange={(e) => setSelectedTypeFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                   >
                     <option value="all">All Types</option>
                     {uniqueTypes.map(type => (
@@ -361,11 +361,11 @@ export default function PromptHistory() {
 
                 {/* Answer Status Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status</label>
                   <select
                     value={answerStatusFilter}
                     onChange={(e) => setAnswerStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white transition-colors"
                   >
                     <option value="all">All</option>
                     <option value="answered">Answered</option>
@@ -382,7 +382,7 @@ export default function PromptHistory() {
                     setSelectedTypeFilter('all');
                     setAnswerStatusFilter('all');
                   }}
-                  className="text-sm text-slate-600 hover:text-slate-900 font-medium"
+                  className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"
                 >
                   Clear all filters
                 </button>
@@ -399,26 +399,26 @@ export default function PromptHistory() {
             <SkeletonPromptCard />
           </div>
         ) : prompts.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-slate-200">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lightbulb className="w-8 h-8 text-slate-400" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-12 text-center shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lightbulb className="w-8 h-8 text-slate-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No prompts yet</h3>
-            <p className="text-slate-600 mb-6">Generate your first prompt to start building your story world</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No prompts yet</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">Generate your first prompt to start building your story world</p>
             <button
               onClick={() => navigate('/')}
-              className="bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
+              className="bg-slate-900 dark:bg-slate-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-800 dark:hover:bg-slate-500 transition-colors"
             >
               Go to Dashboard
             </button>
           </div>
         ) : filteredPrompts.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-slate-200">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-slate-400" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-12 text-center shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-slate-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No prompts found</h3>
-            <p className="text-slate-600 mb-6">Try adjusting your search or filters</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No prompts found</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">Try adjusting your search or filters</p>
             <button
               onClick={() => {
                 setSearchQuery('');
@@ -426,7 +426,7 @@ export default function PromptHistory() {
                 setSelectedTypeFilter('all');
                 setAnswerStatusFilter('all');
               }}
-              className="text-slate-900 hover:text-slate-700 font-medium"
+              className="text-slate-900 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white font-medium"
             >
               Clear all filters
             </button>
@@ -441,22 +441,22 @@ export default function PromptHistory() {
               return (
                 <div
                   key={prompt.id}
-                  className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                  className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all"
                 >
                   <div className="flex flex-wrap items-center gap-2 mb-4">
                     {/* Date */}
-                    <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                    <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
                       <Calendar className="w-4 h-4" />
                       {formatDate(prompt.generated_at)}
                     </div>
                     
-                    <div className="h-4 w-px bg-slate-300" />
+                    <div className="h-4 w-px bg-slate-300 dark:bg-slate-600" />
                     
                     {/* Story Tag */}
                     {book && (
                       <button
                         onClick={() => navigate(`/projects/${book.id}`)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white border border-slate-900 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 dark:bg-slate-600 hover:bg-slate-800 dark:hover:bg-slate-500 text-white border border-slate-900 dark:border-slate-600 transition-colors"
                       >
                         <BookOpen className="w-3 h-3" />
                         {book.title}
@@ -470,22 +470,22 @@ export default function PromptHistory() {
                     
                     {/* Prompt Mode Tag - only show if it's different from the type */}
                     {prompt.prompt_mode && prompt.prompt_mode !== prompt.prompt_type && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                         {prompt.prompt_mode}
                       </span>
                     )}
                   </div>
 
-                  <div className="prose prose-slate max-w-none">
-                    <p className="text-slate-900 leading-relaxed whitespace-pre-wrap">
+                  <div className="prose prose-slate dark:prose-invert max-w-none">
+                    <p className="text-slate-900 dark:text-white leading-relaxed whitespace-pre-wrap">
                       {prompt.prompt_text}
                     </p>
                   </div>
 
                   {prompt.element_references && prompt.element_references.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-100">
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                       <div className="flex items-start gap-2">
-                        <div className="flex items-center gap-2 text-sm text-slate-600 flex-shrink-0">
+                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 flex-shrink-0">
                           <Tag className="w-4 h-4" />
                           <span className="font-medium">Elements:</span>
                         </div>
@@ -498,7 +498,7 @@ export default function PromptHistory() {
                               <button
                                 key={elementId}
                                 onClick={() => navigate(`/projects/${element.book_id}/${elementId}`)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-full text-xs font-medium transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-950 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-medium transition-colors"
                               >
                                 <BookOpen className="w-3 h-3" />
                                 {element.name}
@@ -511,14 +511,14 @@ export default function PromptHistory() {
                   )}
 
                   {responses.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                       {responses.map((response) => {
                         const isEditing = editingResponseId === response.id;
                         
                         return (
-                          <div key={response.id} className="text-slate-700 text-sm">
+                          <div key={response.id} className="text-slate-700 dark:text-slate-300 text-sm">
                             <div className="flex items-center justify-between mb-2">
-                              <div className="text-slate-500 text-xs">
+                              <div className="text-slate-500 dark:text-slate-400 text-xs">
                                 {response.word_count} words
                                 {response.updated_at && response.updated_at !== response.created_at && (
                                   <span className="ml-2">(edited)</span>
@@ -527,7 +527,7 @@ export default function PromptHistory() {
                               {!isEditing && (
                                 <button
                                   onClick={() => handleStartEdit(response)}
-                                  className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
+                                  className="flex items-center gap-1 px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                   Edit
@@ -540,14 +540,14 @@ export default function PromptHistory() {
                                 <textarea
                                   value={editedText}
                                   onChange={(e) => setEditedText(e.target.value)}
-                                  className="w-full min-h-[150px] px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent resize-y"
+                                  className="w-full min-h-[150px] px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent resize-y bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                   disabled={saving}
                                 />
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => handleSaveEdit(response.id)}
                                     disabled={saving}
-                                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 text-xs font-medium"
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-900 dark:bg-slate-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-500 transition-colors disabled:opacity-50 text-xs font-medium"
                                   >
                                     <Save className="w-3 h-3" />
                                     {saving ? 'Saving...' : 'Save'}
@@ -555,7 +555,7 @@ export default function PromptHistory() {
                                   <button
                                     onClick={handleCancelEdit}
                                     disabled={saving}
-                                    className="flex items-center gap-1 px-3 py-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 text-xs font-medium"
+                                    className="flex items-center gap-1 px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 text-xs font-medium"
                                   >
                                     <X className="w-3 h-3" />
                                     Cancel

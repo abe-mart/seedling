@@ -481,25 +481,28 @@ ALTER TABLE story_elements ADD COLUMN sort_order INTEGER DEFAULT 0;
 ---
 
 ### 12. Dark Mode
-**Status**: Not implemented  
+**Status**: ✅ Implemented  
 **Effort**: Medium  
 **Impact**: High (for writers)  
 
 **Why it matters**: Many writers prefer dark mode for long writing sessions.
 
-**Implementation approach**:
-- Use Tailwind's dark mode classes
-- Add theme toggle in account menu
-- Store preference in localStorage and profile
-- Smooth transition animations
+**Implementation**: 
+- ✅ Tailwind dark mode classes enabled (`darkMode: 'class'`)
+- ✅ Theme toggle in Dashboard account menu (Moon/Sun icons)
+- ✅ localStorage persistence
+- ✅ ThemeContext for global state management
+- ✅ Smooth transition animations
+- ✅ Major components styled (Dashboard, Auth, PromptInterface, etc.)
+- ⏳ Backend profile sync (optional enhancement)
 
-```typescript
-// Add to tailwind.config.js
-module.exports = {
-  darkMode: 'class',
-  // ... rest of config
-}
-```
+**Files created/modified**:
+- `tailwind.config.js` - Enabled dark mode
+- `src/contexts/ThemeContext.tsx` - Theme management
+- `src/components/Dashboard.tsx` - Theme toggle UI
+- Multiple component files - Dark mode styles
+
+**See**: `DARK_MODE_COMPLETE.md` for full implementation details
 
 ---
 

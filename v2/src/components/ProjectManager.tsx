@@ -245,17 +245,17 @@ export default function ProjectManager() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/')}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-900 dark:text-white"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-2xl font-bold text-slate-900">Story Manager</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Story Manager</h1>
           </div>
         </div>
       </header>
@@ -263,12 +263,12 @@ export default function ProjectManager() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-slate-900">Stories</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Stories</h2>
                 <button
                   onClick={() => setShowModal('book')}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-900 dark:text-white"
                 >
                   <Plus className="w-5 h-5" />
                 </button>
@@ -287,8 +287,8 @@ export default function ProjectManager() {
                       key={book.id}
                       className={`relative group rounded-lg transition-colors ${
                         selectedBook?.id === book.id
-                          ? 'bg-slate-900 text-white'
-                          : 'bg-slate-50 hover:bg-slate-100 text-slate-900'
+                          ? 'bg-slate-900 dark:bg-slate-600 text-white'
+                          : 'bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-white'
                       }`}
                     >
                       <button
@@ -305,7 +305,7 @@ export default function ProjectManager() {
                             {book.description && (
                               <div
                                 className={`text-sm truncate ${
-                                  selectedBook?.id === book.id ? 'text-slate-300' : 'text-slate-600'
+                                  selectedBook?.id === book.id ? 'text-slate-300 dark:text-slate-200' : 'text-slate-600 dark:text-slate-400'
                                 }`}
                               >
                                 {book.description}
@@ -319,7 +319,7 @@ export default function ProjectManager() {
                           e.stopPropagation();
                           setBookToDelete(book);
                         }}
-                        className={`absolute top-2 right-2 p-1.5 hover:bg-red-50 text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100 ${
+                        className={`absolute top-2 right-2 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded transition-colors opacity-0 group-hover:opacity-100 ${
                           selectedBook?.id === book.id ? 'hover:bg-red-900/20' : ''
                         }`}
                         title="Delete story"
@@ -329,7 +329,7 @@ export default function ProjectManager() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-slate-500">
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                     <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No stories yet</p>
                   </div>
@@ -340,12 +340,12 @@ export default function ProjectManager() {
 
           <div className="lg:col-span-2">
             {selectedBook ? (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">{selectedBook.title}</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedBook.title}</h2>
                     {selectedBook.description && (
-                      <p className="text-slate-600 mt-1">{selectedBook.description}</p>
+                      <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedBook.description}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -358,7 +358,7 @@ export default function ProjectManager() {
                     </button>
                     <button
                       onClick={() => setShowModal('element')}
-                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-500 transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                       Add Element
@@ -370,13 +370,13 @@ export default function ProjectManager() {
                 {elements.length > 0 && (
                   <div className="mb-6 space-y-3">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
                       <input
                         type="text"
                         placeholder="Search elements..."
                         value={elementSearchQuery}
                         onChange={(e) => setElementSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white"
+                        className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors"
                       />
                     </div>
                     
@@ -384,7 +384,7 @@ export default function ProjectManager() {
                       <select
                         value={elementTypeFilter}
                         onChange={(e) => setElementTypeFilter(e.target.value)}
-                        className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-white text-sm"
+                        className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm transition-colors"
                       >
                         <option value="all">All Types</option>
                         {elementTypes.map(type => (
@@ -395,7 +395,7 @@ export default function ProjectManager() {
                       </select>
                       
                       {(elementSearchQuery || elementTypeFilter !== 'all') && (
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
                           {filteredElements.length} of {elements.length} elements
                         </span>
                       )}
@@ -417,7 +417,7 @@ export default function ProjectManager() {
                       return (
                         <div
                           key={element.id}
-                          className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer group"
+                          className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:shadow-md dark:hover:shadow-slate-900/50 transition-shadow cursor-pointer group bg-white dark:bg-slate-700/50"
                           onClick={() => setSelectedElement(element)}
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -433,34 +433,34 @@ export default function ProjectManager() {
                                 e.stopPropagation();
                                 handleDeleteElement(element.id);
                               }}
-                              className="p-1 hover:bg-red-50 text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded transition-colors opacity-0 group-hover:opacity-100"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-                          <h3 className="font-semibold text-slate-900 mb-1">{element.name}</h3>
-                          <p className="text-sm text-slate-600 capitalize mb-2">
+                          <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{element.name}</h3>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 capitalize mb-2">
                             {element.element_type.replace('_', ' ')}
                           </p>
                           {element.description && (
-                            <p className="text-sm text-slate-700 line-clamp-2">{element.description}</p>
+                            <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">{element.description}</p>
                           )}
                         </div>
                       );
                     })
                   ) : elements.length === 0 ? (
                     <div className="col-span-full text-center py-12">
-                      <Lightbulb className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">No story elements yet</h3>
-                      <p className="text-slate-600 mb-4">
+                      <Lightbulb className="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No story elements yet</h3>
+                      <p className="text-slate-600 dark:text-slate-400 mb-4">
                         Add characters, locations, and other elements to your story
                       </p>
                     </div>
                   ) : (
                     <div className="col-span-full text-center py-12">
-                      <Search className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                      <h3 className="text-lg font-semibold text-slate-900 mb-2">No elements found</h3>
-                      <p className="text-slate-600 mb-4">
+                      <Search className="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No elements found</h3>
+                      <p className="text-slate-600 dark:text-slate-400 mb-4">
                         Try adjusting your search or filter
                       </p>
                       <button
@@ -468,7 +468,7 @@ export default function ProjectManager() {
                           setElementSearchQuery('');
                           setElementTypeFilter('all');
                         }}
-                        className="text-slate-900 hover:text-slate-700 font-medium"
+                        className="text-slate-900 dark:text-white hover:text-slate-700 dark:hover:text-slate-300 font-medium transition-colors"
                       >
                         Clear filters
                       </button>
@@ -477,10 +477,10 @@ export default function ProjectManager() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-                <BookOpen className="w-16 h-16 mx-auto mb-4 text-slate-300" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Select a story</h3>
-                <p className="text-slate-600">Choose a story to view and manage its elements</p>
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center transition-colors">
+                <BookOpen className="w-16 h-16 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Select a story</h3>
+                <p className="text-slate-600 dark:text-slate-400">Choose a story to view and manage its elements</p>
               </div>
             )}
           </div>
@@ -488,10 +488,10 @@ export default function ProjectManager() {
       </main>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-slate-900">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                 {showModal === 'book' ? 'Create Story' : 'Add Story Element'}
               </h3>
               <button
@@ -499,7 +499,7 @@ export default function ProjectManager() {
                   setShowModal(null);
                   setFormData({ title: '', description: '', elementType: 'character' });
                 }}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-900 dark:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -508,13 +508,13 @@ export default function ProjectManager() {
             <div className="space-y-4">
               {showModal === 'element' && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
                   <select
                     value={formData.elementType}
                     onChange={(e) =>
                       setFormData({ ...formData, elementType: e.target.value as any })
                     }
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="character">Character</option>
                     <option value="location">Location</option>
@@ -526,25 +526,25 @@ export default function ProjectManager() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   {showModal === 'book' ? 'Title' : 'Name'}
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   placeholder={showModal === 'book' ? 'My Story' : 'Element name'}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none resize-none"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent outline-none resize-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   placeholder="Add a description..."
                 />
               </div>
@@ -555,14 +555,14 @@ export default function ProjectManager() {
                     setShowModal(null);
                     setFormData({ title: '', description: '', elementType: 'character' });
                   }}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={showModal === 'book' ? handleCreateBook : handleCreateElement}
                   disabled={!formData.title}
-                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-slate-900 dark:bg-slate-600 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create
                 </button>
@@ -573,15 +573,15 @@ export default function ProjectManager() {
       )}
       
       {bookToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700">
             <div className="flex items-start gap-4 mb-4">
-              <div className="p-3 bg-red-100 rounded-full">
-                <Trash2 className="w-6 h-6 text-red-600" />
+              <div className="p-3 bg-red-100 dark:bg-red-950 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Story?</h3>
-                <p className="text-slate-600">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Delete Story?</h3>
+                <p className="text-slate-600 dark:text-slate-400">
                   Are you sure you want to delete <span className="font-semibold">"{bookToDelete.title}"</span>? 
                   This will permanently delete the story and all of its elements. This action cannot be undone.
                 </p>
@@ -591,13 +591,13 @@ export default function ProjectManager() {
             <div className="flex gap-3">
               <button
                 onClick={() => setBookToDelete(null)}
-                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteBook}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition-colors"
               >
                 Delete Story
               </button>

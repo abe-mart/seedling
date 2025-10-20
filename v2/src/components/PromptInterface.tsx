@@ -384,19 +384,19 @@ export default function PromptInterface() {
   const filteredElements = getFilteredElements();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => navigate('/')} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+              <button onClick={() => navigate('/')} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-900 dark:text-white">
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <h1 className="text-2xl font-bold text-slate-900">Writing Prompt</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Writing Prompt</h1>
             </div>
             <button
               onClick={() => navigate('/history')}
-              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               <History className="w-4 h-4" />
               History
@@ -426,13 +426,13 @@ export default function PromptInterface() {
             onAction={() => navigate(`/projects/${selectedBook}`)}
           />
         ) : !currentPrompt ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8 transition-colors">
             <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Select Project</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Select Project</label>
               <select
                 value={selectedBook}
                 onChange={(e) => setSelectedBook(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none"
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent outline-none transition-colors"
               >
                 {books.map((book) => (
                   <option key={book.id} value={book.id}>
@@ -453,7 +453,7 @@ export default function PromptInterface() {
                     }
                     setShowAdvancedModes(!showAdvancedModes);
                   }}
-                  className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 hover:text-slate-900 py-2 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white py-2 transition-colors"
                 >
                   {showAdvancedModes ? (
                     <>
@@ -469,8 +469,8 @@ export default function PromptInterface() {
                 </button>
 
                 {showAdvancedModes && (
-                  <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                    <label className="block text-sm font-medium text-slate-700 mb-3">
+                  <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 transition-colors">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                       Specialized Prompt Types
                     </label>
                     <div className="grid grid-cols-1 gap-2">
@@ -483,12 +483,12 @@ export default function PromptInterface() {
                             onClick={() => setSelectedMode(mode.id)}
                             className={`p-3 rounded-lg border-2 transition-all text-left ${
                               selectedMode === mode.id
-                                ? 'border-lime-500 bg-lime-50'
-                                : 'border-slate-200 hover:border-slate-300 bg-white'
+                                ? 'border-lime-500 bg-lime-50 dark:bg-lime-950'
+                                : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 bg-white dark:bg-slate-800'
                             }`}
                           >
-                            <div className="font-medium text-slate-900 text-sm">{mode.label}</div>
-                            <div className="text-xs text-slate-600 mt-0.5">{mode.description}</div>
+                            <div className="font-medium text-slate-900 dark:text-white text-sm">{mode.label}</div>
+                            <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{mode.description}</div>
                           </button>
                         );
                       })}
@@ -497,7 +497,7 @@ export default function PromptInterface() {
                     {selectedMode !== 'general' && (
                       <button
                         onClick={() => setSelectedMode('general')}
-                        className="mt-3 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                        className="mt-3 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
                       >
                         ← Clear Specialized Prompt Type
                       </button>
@@ -508,8 +508,8 @@ export default function PromptInterface() {
             )}
 
             {filteredElements.length > 0 && showAdvancedModes && (
-              <div className="mb-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+              <div className="mb-4 p-4 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 transition-colors">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Focus on Specific Elements (Optional)
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -526,14 +526,14 @@ export default function PromptInterface() {
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                         selectedTags.includes(element.id)
                           ? 'bg-lime-600 text-white'
-                          : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600'
                       }`}
                     >
                       {element.name}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-slate-500 mt-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                   Leave unselected for AI to choose relevant elements automatically
                 </p>
               </div>
@@ -541,9 +541,9 @@ export default function PromptInterface() {
 
             {/* Generate button - now appears after advanced options */}
             {elements.length === 0 ? (
-              <div className="text-center p-6 bg-amber-50 border-2 border-amber-200 rounded-xl">
-                <p className="text-amber-800 font-medium mb-2">No story elements yet</p>
-                <p className="text-sm text-amber-700 mb-4">
+              <div className="text-center p-6 bg-amber-50 dark:bg-amber-950 border-2 border-amber-200 dark:border-amber-800 rounded-xl transition-colors">
+                <p className="text-amber-800 dark:text-amber-300 font-medium mb-2">No story elements yet</p>
+                <p className="text-sm text-amber-700 dark:text-amber-400 mb-4">
                   Add characters, locations, or other story elements to generate relevant prompts
                 </p>
                 <button
@@ -580,22 +580,22 @@ export default function PromptInterface() {
               <SkeletonPromptGeneration />
             ) : (
               <>
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-950 rounded-xl p-8 text-white shadow-lg">
                   <div className="flex items-start gap-3 mb-4">
                     <Sparkles className="w-6 h-6 flex-shrink-0 mt-1" />
                     <p className="text-lg leading-relaxed">{currentPrompt.prompt_text}</p>
                   </div>
-                  <div className="text-slate-300 text-sm">
+                  <div className="text-slate-300 dark:text-slate-400 text-sm">
                     {selectedMode.replace('_', ' ')} • {new Date().toLocaleDateString()}
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
                   <div className="flex items-center justify-between mb-4">
-                    <label className="text-lg font-semibold text-slate-900">Your Response</label>
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <label className="text-lg font-semibold text-slate-900 dark:text-white">Your Response</label>
+                    <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
                       <div>{wordCount} words</div>
-                      {autoSaveTimeout && <div className="text-green-600">Auto-saving...</div>}
+                      {autoSaveTimeout && <div className="text-green-600 dark:text-green-400">Auto-saving...</div>}
                     </div>
                   </div>
 
@@ -603,14 +603,14 @@ export default function PromptInterface() {
                     value={responseText}
                     onChange={(e) => setResponseText(e.target.value)}
                     placeholder="Start writing your response..."
-                    className="w-full min-h-[400px] px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none resize-none text-slate-900 leading-relaxed"
+                    className="w-full min-h-[400px] px-4 py-3 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent outline-none resize-none leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors"
                   />
 
                   <div className="mt-4 flex gap-3">
                     <button
                       onClick={saveResponse}
                       disabled={saving || !responseText.trim()}
-                      className="flex-1 bg-slate-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="flex-1 bg-slate-900 dark:bg-slate-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-slate-800 dark:hover:bg-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {saving ? (
                         <>
@@ -634,7 +634,7 @@ export default function PromptInterface() {
                           setGeneratedElementRefs([]);
                         }
                       }}
-                      className="px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                      className="px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       Cancel
                     </button>
