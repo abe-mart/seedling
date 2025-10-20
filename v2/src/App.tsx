@@ -10,6 +10,7 @@ import PromptHistory from './components/PromptHistory';
 import Stats from './components/Stats';
 import DailyPromptWrite from './components/DailyPromptWrite';
 import DailyPromptSettings from './components/DailyPromptSettings';
+import PWAUpdatePrompt from './components/PWAUpdatePrompt';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -151,6 +152,7 @@ function App() {
               },
             }}
           />
+          <PWAUpdatePrompt />
           <AppContent />
         </AuthProvider>
       </ThemeProvider>

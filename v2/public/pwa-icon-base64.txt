@@ -1,0 +1,2 @@
+# We'll create these as simple SVG that Vite will handle
+# For now, let's create minimal PNG placeholders
