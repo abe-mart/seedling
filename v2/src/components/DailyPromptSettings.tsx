@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Settings, Mail, Clock, BookOpen, Save, Loader2, Bell, ChevronLeft, Send } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 interface Book {
@@ -30,6 +30,8 @@ interface Preferences {
 
 export default function DailyPromptSettings() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const unsubscribe = searchParams.get('unsubscribe') === 'true';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
@@ -57,6 +59,27 @@ export default function DailyPromptSettings() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    // Show unsubscribe message if coming from email unsubscribe link
+    if (unsubscribe && !loading) {
+      toast(
+        (t) => (
+          <div>
+            <div className="font-semibold mb-1">Want to unsubscribe?</div>
+            <div className="text-sm mb-3">Simply toggle "Enable Daily Prompts" below to stop receiving emails.</div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Got it
+            </button>
+          </div>
+        ),
+        { duration: 8000, icon: '📧' }
+      );
+    }
+  }, [unsubscribe, loading]);
 
   async function loadData() {
     try {

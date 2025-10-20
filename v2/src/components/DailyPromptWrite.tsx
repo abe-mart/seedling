@@ -61,11 +61,6 @@ export default function DailyPromptWrite() {
       return;
     }
 
-    if (wordCount < 10) {
-      toast.error('Try writing at least 10 words');
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -79,20 +74,24 @@ export default function DailyPromptWrite() {
         throw new Error('Failed to submit response');
       }
 
-      toast.success('Response saved! Great work! 🎉');
+      toast.success(
+        (t) => (
+          <div>
+            <div className="font-semibold mb-1">Response saved! 🎉</div>
+            <div className="text-sm">Great work keeping your streak alive! Redirecting to your dashboard...</div>
+          </div>
+        ),
+        { duration: 3000 }
+      );
       
-      // Clear form
-      setResponseText('');
-      
-      // Show success message
+      // Redirect to dashboard after brief delay
       setTimeout(() => {
-        toast.success('You can close this page now or keep writing');
-      }, 1000);
+        navigate('/');
+      }, 2000);
 
     } catch (error) {
       console.error('Error submitting response:', error);
       toast.error('Failed to save response');
-    } finally {
       setSubmitting(false);
     }
   }
@@ -112,14 +111,32 @@ export default function DailyPromptWrite() {
       const data = await response.json();
 
       if (data.paused) {
-        toast.error('Daily prompts paused after too many skips. Re-enable in settings.');
+        toast.error(
+          (t) => (
+            <div>
+              <div className="font-semibold mb-1">Daily prompts paused</div>
+              <div className="text-sm">You've skipped too many prompts. Re-enable in settings when you're ready!</div>
+            </div>
+          ),
+          { duration: 5000 }
+        );
+        setTimeout(() => {
+          navigate('/settings/daily-prompts');
+        }, 3000);
       } else {
-        toast.success('Prompt skipped. See you tomorrow!');
+        toast.success(
+          (t) => (
+            <div>
+              <div className="font-semibold mb-1">Prompt skipped</div>
+              <div className="text-sm">No worries! Tomorrow's prompt will be waiting for you. 📧</div>
+            </div>
+          ),
+          { duration: 3000 }
+        );
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
       }
-
-      setTimeout(() => {
-        window.close();
-      }, 2000);
 
     } catch (error) {
       console.error('Error skipping prompt:', error);

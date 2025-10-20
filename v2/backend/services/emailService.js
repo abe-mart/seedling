@@ -156,7 +156,8 @@ function getMinimalHTML({ promptText, writeUrl, skipUrl }) {
   
   <div class="footer">
     <p>Keep your streak alive! 🔥<br>
-    <a href="${BASE_URL}/settings" style="color: #10b981;">Manage your preferences</a></p>
+    <a href="${BASE_URL}/settings/daily-prompts" style="color: #10b981; text-decoration: none;">Manage your preferences</a> • 
+    <a href="${BASE_URL}/settings/daily-prompts?unsubscribe=true" style="color: #9ca3af; text-decoration: none;">Unsubscribe</a></p>
   </div>
 </body>
 </html>
@@ -177,7 +178,8 @@ Write Now: ${writeUrl}
 Skip Today: ${skipUrl}
 
 Keep your streak alive! 🔥
-Manage preferences: ${BASE_URL}/settings
+Manage preferences: ${BASE_URL}/settings/daily-prompts
+Unsubscribe: ${BASE_URL}/settings/daily-prompts?unsubscribe=true
   `.trim();
 }
 
@@ -237,7 +239,8 @@ function getDetailedHTML({ promptText, elementName, elementType, bookTitle, writ
   
   <div class="footer">
     <p>Keep your streak alive! 🔥<br>
-    <a href="${BASE_URL}/settings" style="color: #10b981;">Manage your preferences</a></p>
+    <a href="${BASE_URL}/settings/daily-prompts" style="color: #10b981; text-decoration: none;">Manage your preferences</a> • 
+    <a href="${BASE_URL}/settings/daily-prompts?unsubscribe=true" style="color: #9ca3af; text-decoration: none;">Unsubscribe</a></p>
   </div>
 </body>
 </html>
@@ -261,7 +264,8 @@ Write Now: ${writeUrl}
 Skip Today: ${skipUrl}
 
 Keep your streak alive! 🔥
-Manage preferences: ${BASE_URL}/settings
+Manage preferences: ${BASE_URL}/settings/daily-prompts
+Unsubscribe: ${BASE_URL}/settings/daily-prompts?unsubscribe=true
   `.trim();
 }
 
@@ -325,7 +329,8 @@ function getInspirationalHTML({ promptText, elementName, elementType, bookTitle,
   
   <div class="footer">
     <p>Keep nurturing your story, one prompt at a time 🔥<br>
-    <a href="${BASE_URL}/settings" style="color: #10b981;">Manage your preferences</a></p>
+    <a href="${BASE_URL}/settings/daily-prompts" style="color: #10b981; text-decoration: none;">Manage your preferences</a> • 
+    <a href="${BASE_URL}/settings/daily-prompts?unsubscribe=true" style="color: #9ca3af; text-decoration: none;">Unsubscribe</a></p>
   </div>
 </body>
 </html>
@@ -360,7 +365,8 @@ ${promptText}
 Skip Today: ${skipUrl}
 
 Keep nurturing your story, one prompt at a time 🔥
-Manage preferences: ${BASE_URL}/settings
+Manage preferences: ${BASE_URL}/settings/daily-prompts
+Unsubscribe: ${BASE_URL}/settings/daily-prompts?unsubscribe=true
   `.trim();
 }
 

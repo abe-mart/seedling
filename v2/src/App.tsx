@@ -108,6 +108,14 @@ function AppContent() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/settings/daily-prompts"
+        element={
+          <ProtectedRoute>
+            <DailyPromptSettings />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
