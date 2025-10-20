@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Mail, Clock, BookOpen, Save, Loader2, Bell, ChevronLeft, Send } from 'lucide-react';
+import { Settings, Mail, Clock, BookOpen, Save, Loader2, Bell, ChevronLeft, Send, Tag } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -8,11 +8,20 @@ interface Book {
   title: string;
 }
 
+interface StoryElement {
+  id: string;
+  book_id: string;
+  element_type: string;
+  name: string;
+  description?: string;
+}
+
 interface Preferences {
   enabled: boolean;
   delivery_time: string;
   timezone: string;
   focus_story_id: string | null;
+  focus_element_ids: string[] | null;
   email_format: string;
   include_character: boolean;
   include_plot: boolean;
@@ -36,11 +45,14 @@ export default function DailyPromptSettings() {
   const [saving, setSaving] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
+  const [elements, setElements] = useState<StoryElement[]>([]);
+  const [loadingElements, setLoadingElements] = useState(false);
   const [preferences, setPreferences] = useState<Preferences>({
     enabled: false,
     delivery_time: '09:00',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     focus_story_id: null,
+    focus_element_ids: null,
     email_format: 'minimal',
     include_character: true,
     include_plot: true,
@@ -59,6 +71,19 @@ export default function DailyPromptSettings() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    // Load elements when a focus story is selected
+    if (preferences.focus_story_id) {
+      loadElements(preferences.focus_story_id);
+    } else {
+      setElements([]);
+      // Clear element selection when story focus is removed
+      if (preferences.focus_element_ids && preferences.focus_element_ids.length > 0) {
+        setPreferences(prev => ({ ...prev, focus_element_ids: null }));
+      }
+    }
+  }, [preferences.focus_story_id]);
 
   useEffect(() => {
     // Show unsubscribe message if coming from email unsubscribe link
@@ -102,6 +127,43 @@ export default function DailyPromptSettings() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadElements(bookId: string) {
+    setLoadingElements(true);
+    try {
+      const response = await fetch(`/api/books/${bookId}/elements`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setElements(data);
+      }
+    } catch (error) {
+      console.error('Error loading elements:', error);
+      toast.error('Failed to load story elements');
+    } finally {
+      setLoadingElements(false);
+    }
+  }
+
+  function toggleElementSelection(elementId: string) {
+    setPreferences(prev => {
+      const currentIds = prev.focus_element_ids || [];
+      const isSelected = currentIds.includes(elementId);
+      
+      return {
+        ...prev,
+        focus_element_ids: isSelected
+          ? currentIds.filter(id => id !== elementId)
+          : [...currentIds, elementId]
+      };
+    });
+  }
+
+  function toggleAllElements(select: boolean) {
+    setPreferences(prev => ({
+      ...prev,
+      focus_element_ids: select ? elements.map(el => el.id) : []
+    }));
   }
 
   async function handleSave() {
@@ -322,6 +384,106 @@ export default function DailyPromptSettings() {
               </select>
             </div>
           </div>
+
+          {/* Element Focus - Only show when a single story is selected */}
+          {preferences.focus_story_id && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-slate-700 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <Tag className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Focus on Specific Elements</h2>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Select which story elements you'd like your daily prompts to focus on. Leave all unchecked to include all elements.
+              </p>
+
+              {loadingElements ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 animate-spin" />
+                </div>
+              ) : elements.length > 0 ? (
+                <>
+                  {/* Select/Deselect All */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={() => toggleAllElements(true)}
+                      className="px-3 py-1.5 text-sm bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => toggleAllElements(false)}
+                      className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+
+                  {/* Element Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+                    {elements.map((element) => {
+                      const isSelected = preferences.focus_element_ids?.includes(element.id) || false;
+                      const elementTypeLabels: { [key: string]: { label: string; color: string } } = {
+                        character: { label: 'Character', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
+                        location: { label: 'Location', color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' },
+                        plot_point: { label: 'Plot', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' },
+                        item: { label: 'Item', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
+                        theme: { label: 'Theme', color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300' },
+                      };
+                      const typeInfo = elementTypeLabels[element.element_type] || { label: element.element_type, color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' };
+
+                      return (
+                        <label
+                          key={element.id}
+                          className={`flex items-start gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                            isSelected
+                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950'
+                              : 'border-gray-200 dark:border-slate-600 hover:border-emerald-200 dark:hover:border-emerald-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleElementSelection(element.id)}
+                            className="w-5 h-5 text-emerald-600 dark:text-emerald-500 rounded focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-600 mt-0.5 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-900 dark:text-white truncate">{element.name}</span>
+                              <span className={`px-2 py-0.5 text-xs rounded-full ${typeInfo.color} flex-shrink-0`}>
+                                {typeInfo.label}
+                              </span>
+                            </div>
+                            {element.description && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{element.description}</p>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {/* Summary */}
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      {preferences.focus_element_ids && preferences.focus_element_ids.length > 0 ? (
+                        <>
+                          <strong>{preferences.focus_element_ids.length}</strong> of <strong>{elements.length}</strong> elements selected.
+                          Daily prompts will only use these elements.
+                        </>
+                      ) : (
+                        <>All <strong>{elements.length}</strong> elements available. Daily prompts will choose from any element.</>
+                      )}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <p className="text-sm">No story elements found for this book.</p>
+                  <p className="text-xs mt-1">Add elements to your story to enable element-specific prompts.</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Prompt Types */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-slate-700 transition-colors">

@@ -40,19 +40,30 @@ export async function selectPromptForUser(userId, preferences) {
       return null; // No elements to generate prompts for
     }
 
-    // Filter elements by prompt type preferences
-    const typeMap = {
-      'character': preferences.include_character,
-      'location': preferences.include_worldbuilding,
-      'plot_point': preferences.include_plot,
-      'item': preferences.include_worldbuilding,
-      'theme': preferences.include_conflict
-    };
+    // Filter elements by focus_element_ids if set (when focusing on specific elements within a story)
+    let eligibleElements = elements;
+    if (preferences.focus_element_ids && preferences.focus_element_ids.length > 0) {
+      eligibleElements = elements.filter(el => preferences.focus_element_ids.includes(el.id));
+      
+      // If all selected elements have been filtered out by type preferences, fall back
+      if (eligibleElements.length === 0) {
+        eligibleElements = elements.filter(el => preferences.focus_element_ids.includes(el.id));
+      }
+    } else {
+      // Otherwise, filter elements by prompt type preferences
+      const typeMap = {
+        'character': preferences.include_character,
+        'location': preferences.include_worldbuilding,
+        'plot_point': preferences.include_plot,
+        'item': preferences.include_worldbuilding,
+        'theme': preferences.include_conflict
+      };
 
-    let eligibleElements = elements.filter(el => typeMap[el.element_type] !== false);
-    
-    if (eligibleElements.length === 0) {
-      eligibleElements = elements; // Fall back to all elements if filters are too restrictive
+      eligibleElements = elements.filter(el => typeMap[el.element_type] !== false);
+      
+      if (eligibleElements.length === 0) {
+        eligibleElements = elements; // Fall back to all elements if filters are too restrictive
+      }
     }
 
     // If focus_underdeveloped is true, prioritize elements with fewer responses
