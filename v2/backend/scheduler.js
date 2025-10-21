@@ -48,16 +48,18 @@ cron.schedule('0 * * * *', async () => {
         const userTime = formatInTimeZone(now, user.timezone, 'HH:mm');
         const deliveryTime = user.delivery_time.substring(0, 5); // Format: "09:00"
 
-        // Check if already sent today
+        // Check if already sent today (using UTC for consistency with unique constraint)
+        // The unique constraint uses: (sent_at AT TIME ZONE 'UTC')::date
         const { rows: sentToday } = await db.query(
           `SELECT id FROM daily_prompts_sent
            WHERE user_id = $1
-           AND DATE(sent_at AT TIME ZONE $2) = CURRENT_DATE`,
-          [user.user_id, user.timezone]
+           AND (sent_at AT TIME ZONE 'UTC')::date = CURRENT_DATE
+           AND is_test = false`,
+          [user.user_id]
         );
 
         if (sentToday.length > 0) {
-          console.log(`Already sent prompt to user ${user.user_id} today`);
+          console.log(`Already sent prompt to user ${user.user_id} today (UTC: ${new Date().toISOString().split('T')[0]})`);
           continue;
         }
 
