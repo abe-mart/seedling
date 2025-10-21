@@ -287,9 +287,9 @@ export async function markPromptResponded(promptLogId, responseId) {
 }
 
 /**
- * Update user's streak when they respond to a prompt
+ * Update user's streak when they respond to a prompt or write
  */
-async function updateUserStreak(userId) {
+export async function updateUserStreak(userId) {
   try {
     // Get current profile data
     const { rows: [profile] } = await db.query(

@@ -343,6 +343,10 @@ app.post('/api/responses', requireAuth, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *`,
       [prompt_id, req.user.id, response_text, element_tags || [], word_count || 0]
     );
+    
+    // Update user's writing streak
+    await updateUserStreak(req.user.id);
+    
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error creating response:', error);
@@ -465,7 +469,8 @@ import {
   markPromptOpened,
   markPromptResponded,
   markPromptSkipped,
-  selectPromptForUser
+  selectPromptForUser,
+  updateUserStreak
 } from './services/dailyPromptsService.js';
 import { verifyMagicLinkToken, sendDailyPromptEmail } from './services/emailService.js';
 
