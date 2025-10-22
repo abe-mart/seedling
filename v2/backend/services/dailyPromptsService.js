@@ -291,53 +291,44 @@ export async function markPromptResponded(promptLogId, responseId) {
  */
 export async function updateUserStreak(userId) {
   try {
-    // Get current profile data
-    const { rows: [profile] } = await db.query(
-      `SELECT current_streak, longest_streak, last_prompt_date
-       FROM profiles
-       WHERE user_id = $1`,
+    // Use PostgreSQL's date handling to avoid timezone issues
+    // Calculate the streak entirely in the database
+    const { rows: [result] } = await db.query(
+      `WITH current_data AS (
+        SELECT 
+          current_streak, 
+          longest_streak, 
+          last_prompt_date,
+          CURRENT_DATE as today,
+          CASE 
+            WHEN last_prompt_date IS NULL THEN NULL
+            ELSE CURRENT_DATE - last_prompt_date
+          END as days_since_last
+        FROM profiles
+        WHERE user_id = $1
+      )
+      SELECT 
+        current_streak,
+        longest_streak,
+        days_since_last,
+        CASE
+          WHEN last_prompt_date IS NULL THEN 1  -- First response ever
+          WHEN days_since_last = 0 THEN current_streak  -- Same day, keep streak
+          WHEN days_since_last = 1 THEN current_streak + 1  -- Consecutive day, increment
+          ELSE 1  -- Streak broken, reset to 1
+        END as new_streak
+      FROM current_data`,
       [userId]
     );
     
-    if (!profile) {
+    if (!result) {
       console.warn(`No profile found for user ${userId}`);
       return;
     }
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to start of day
-    
-    const lastPromptDate = profile.last_prompt_date 
-      ? new Date(profile.last_prompt_date) 
-      : null;
-    
-    if (lastPromptDate) {
-      lastPromptDate.setHours(0, 0, 0, 0); // Normalize to start of day
-    }
-    
-    let newStreak = profile.current_streak || 0;
-    
-    if (!lastPromptDate) {
-      // First prompt ever
-      newStreak = 1;
-    } else {
-      const daysDiff = Math.floor((today - lastPromptDate) / (1000 * 60 * 60 * 24));
-      
-      if (daysDiff === 0) {
-        // Same day - don't increment streak, but update last_prompt_date
-        // Keep current streak as is
-      } else if (daysDiff === 1) {
-        // Consecutive day - increment streak
-        newStreak = newStreak + 1;
-      } else {
-        // Streak broken - reset to 1
-        newStreak = 1;
-      }
-    }
-    
-    // Calculate new longest streak
+    const newStreak = result.new_streak;
     const newLongestStreak = Math.max(
-      profile.longest_streak || 0,
+      result.longest_streak || 0,
       newStreak
     );
     
@@ -352,7 +343,7 @@ export async function updateUserStreak(userId) {
       [newStreak, newLongestStreak, userId]
     );
     
-    console.log(`✅ Updated streak for user ${userId}: ${newStreak} (longest: ${newLongestStreak})`);
+    console.log(`✅ Updated streak for user ${userId}: ${result.current_streak} -> ${newStreak} (days_since: ${result.days_since_last}, longest: ${newLongestStreak})`);
   } catch (error) {
     console.error('Error updating user streak:', error);
     // Don't throw - streak tracking shouldn't block the response
