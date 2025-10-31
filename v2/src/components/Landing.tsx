@@ -111,189 +111,175 @@ export default function Landing() {
 
             {/* Visual Demo Section */}
             <div className="max-w-5xl mx-auto">
-              <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-50 to-emerald-50 p-6 border-b-2 border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+              {/* Progress Indicator */}
+              <div className="flex items-center justify-center gap-2 mb-8">
+                <div className={`h-1 rounded-full transition-all duration-500 ${activeStep >= 0 ? 'w-20 bg-gradient-to-r from-emerald-600 to-lime-600' : 'w-12 bg-slate-200'}`}></div>
+                <div className={`h-1 rounded-full transition-all duration-500 ${activeStep >= 1 ? 'w-20 bg-gradient-to-r from-emerald-600 to-lime-600' : 'w-12 bg-slate-200'}`}></div>
+                <div className={`h-1 rounded-full transition-all duration-500 ${activeStep >= 2 ? 'w-20 bg-gradient-to-r from-emerald-600 to-lime-600' : 'w-12 bg-slate-200'}`}></div>
+              </div>
+
+              <div className="space-y-8">
+                {/* Step 1: Add Elements */}
+                <div className={`transition-all duration-700 ${activeStep >= 0 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}>
+                  <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-emerald-50 to-lime-50 p-6 border-b-2 border-emerald-200">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-lime-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                          1
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900">Add Your Story Elements</h3>
+                          <p className="text-slate-600 text-sm">Create the foundation of your world</p>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-sm font-semibold text-slate-600">How StorySeed Works</span>
+                    
+                    <div className="p-8">
+                      <div className="space-y-4">
+                        <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-5 border-2 border-emerald-200 hover:shadow-lg transition-all">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                              <Users className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Character</span>
+                          </div>
+                          <h4 className="font-bold text-slate-900 text-lg mb-1">Elena Rodriguez</h4>
+                          <p className="text-slate-600">A brilliant archaeologist haunted by her past discoveries</p>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-5 border-2 border-blue-200 hover:shadow-lg transition-all">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                              <Target className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Location</span>
+                          </div>
+                          <h4 className="font-bold text-slate-900 text-lg mb-1">The Forgotten Temple</h4>
+                          <p className="text-slate-600">Deep in the Amazon rainforest, untouched for centuries</p>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-5 border-2 border-purple-200 hover:shadow-lg transition-all">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                              <BookOpen className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">Theme</span>
+                          </div>
+                          <h4 className="font-bold text-slate-900 text-lg mb-1">Redemption vs. Ambition</h4>
+                          <p className="text-slate-600">The conflict between making amends and achieving greatness</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="p-8 md:p-12">
-                  {/* Step Navigation */}
-                  <div className="flex justify-center gap-4 mb-12">
-                    <button
-                      onClick={() => setActiveStep(0)}
-                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                        activeStep === 0
-                          ? 'bg-gradient-to-r from-emerald-600 to-lime-600 text-white shadow-lg'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      1. Add Story Elements
-                    </button>
-                    <button
-                      onClick={() => setActiveStep(1)}
-                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                        activeStep === 1
-                          ? 'bg-gradient-to-r from-emerald-600 to-lime-600 text-white shadow-lg'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      2. Get Prompts
-                    </button>
-                    <button
-                      onClick={() => setActiveStep(2)}
-                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                        activeStep === 2
-                          ? 'bg-gradient-to-r from-emerald-600 to-lime-600 text-white shadow-lg'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      3. Write
-                    </button>
-                  </div>
 
-                  {/* Step 1: Add Elements */}
-                  {activeStep === 0 && (
-                    <div className="animate-fade-in">
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <BookOpen className="w-6 h-6 text-white" />
+                {/* Arrow Connector */}
+                <div className={`flex justify-center transition-all duration-700 ${activeStep >= 1 ? 'opacity-100' : 'opacity-20'}`}>
+                  <ArrowRight className="w-8 h-8 text-emerald-600" />
+                </div>
+
+                {/* Step 2: Get Prompts */}
+                <div className={`transition-all duration-700 ${activeStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}>
+                  <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 border-b-2 border-indigo-200">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                          2
                         </div>
                         <div>
-                          <h3 className="text-2xl font-bold text-slate-900 mb-2">Create Your Story Foundation</h3>
-                          <p className="text-slate-600 text-lg">Add the elements of your story—characters, locations, themes, and plot points.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-slate-50 to-emerald-50 rounded-2xl p-8 border-2 border-emerald-200">
-                        <div className="space-y-4">
-                          <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                              <span className="text-xs font-semibold text-slate-500 uppercase">Character</span>
-                            </div>
-                            <h4 className="font-bold text-slate-900 text-lg">Elena Rodriguez</h4>
-                            <p className="text-slate-600 text-sm mt-1">A brilliant archaeologist haunted by her past discoveries</p>
-                          </div>
-                          
-                          <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                              <span className="text-xs font-semibold text-slate-500 uppercase">Location</span>
-                            </div>
-                            <h4 className="font-bold text-slate-900 text-lg">The Forgotten Temple</h4>
-                            <p className="text-slate-600 text-sm mt-1">Deep in the Amazon rainforest, untouched for centuries</p>
-                          </div>
-                          
-                          <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                              <span className="text-xs font-semibold text-slate-500 uppercase">Theme</span>
-                            </div>
-                            <h4 className="font-bold text-slate-900 text-lg">Redemption vs. Ambition</h4>
-                            <p className="text-slate-600 text-sm mt-1">The conflict between making amends and achieving greatness</p>
-                          </div>
+                          <h3 className="text-xl font-bold text-slate-900">Receive a Thoughtful Prompt</h3>
+                          <p className="text-slate-600 text-sm">Questions that deepen your understanding</p>
                         </div>
                       </div>
                     </div>
-                  )}
-
-                  {/* Step 2: Get Prompts */}
-                  {activeStep === 1 && (
-                    <div className="animate-fade-in">
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Lightbulb className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold text-slate-900 mb-2">Receive Thought-Provoking Prompts</h3>
-                          <p className="text-slate-600 text-lg">StorySeed analyzes your elements and asks questions to deepen your story.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 border-2 border-indigo-200">
-                        <div className="flex items-start gap-4">
-                          <MessageSquare className="w-6 h-6 text-indigo-600 mt-1 flex-shrink-0" />
-                          <div>
-                            <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-indigo-200">
+                    
+                    <div className="p-8">
+                      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border-2 border-indigo-200">
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Lightbulb className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-indigo-300">
                               <p className="text-slate-900 text-lg font-medium leading-relaxed">
                                 "What specific discovery from Elena's past haunts her the most? 
                                 How does this memory influence her decisions when she enters the Forgotten Temple?"
                               </p>
-                              <div className="mt-4 pt-4 border-t border-slate-200">
-                                <div className="flex items-center gap-2 text-sm text-slate-500">
-                                  <Target className="w-4 h-4" />
-                                  <span>Focuses on: <span className="font-semibold text-emerald-600">Elena Rodriguez</span> + <span className="font-semibold text-blue-600">The Forgotten Temple</span></span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-4 flex items-center gap-2 text-indigo-600">
-                              <Zap className="w-5 h-5" />
-                              <span className="text-sm font-semibold">Intelligently connects your underdeveloped elements</span>
                             </div>
                           </div>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-sm text-slate-600 bg-white/50 rounded-lg p-3">
+                          <Zap className="w-4 h-4 text-indigo-600" />
+                          <span>Connects: <span className="font-semibold text-emerald-600">Elena</span> + <span className="font-semibold text-blue-600">Temple</span></span>
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  {/* Step 3: Write */}
-                  {activeStep === 2 && (
-                    <div className="animate-fade-in">
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Edit3 className="w-6 h-6 text-white" />
+                {/* Arrow Connector */}
+                <div className={`flex justify-center transition-all duration-700 ${activeStep >= 2 ? 'opacity-100' : 'opacity-20'}`}>
+                  <ArrowRight className="w-8 h-8 text-emerald-600" />
+                </div>
+
+                {/* Step 3: Write */}
+                <div className={`transition-all duration-700 ${activeStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}>
+                  <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 border-b-2 border-amber-200">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                          3
                         </div>
                         <div>
-                          <h3 className="text-2xl font-bold text-slate-900 mb-2">Write Your Response</h3>
-                          <p className="text-slate-600 text-lg">Answer with your own ideas—every word is yours.</p>
+                          <h3 className="text-xl font-bold text-slate-900">Write Your Response</h3>
+                          <p className="text-slate-600 text-sm">Every word is yours—StorySeed never writes for you</p>
                         </div>
                       </div>
-                      
-                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 border-2 border-amber-200">
-                        <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-amber-200">
-                          <div className="flex items-center gap-2 mb-4">
-                            <Edit3 className="w-5 h-5 text-amber-600" />
-                            <span className="text-sm font-semibold text-slate-600">Your Response (247 words)</span>
+                    </div>
+                    
+                    <div className="p-8">
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border-2 border-amber-200">
+                        <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-amber-300">
+                          <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200">
+                            <div className="flex items-center gap-2 text-amber-700">
+                              <Edit3 className="w-5 h-5" />
+                              <span className="text-sm font-semibold">Your Writing</span>
+                            </div>
+                            <span className="text-sm text-slate-500 font-medium">247 words</span>
                           </div>
-                          <div className="text-slate-700 leading-relaxed space-y-3">
-                            <p>
-                              "Elena's hands still trembled when she thought about the Mayan codex she'd authenticated five years ago. 
+                          <div className="text-slate-700 leading-relaxed space-y-4">
+                            <p className="font-serif text-base">
+                              Elena's hands still trembled when she thought about the Mayan codex she'd authenticated five years ago. 
                               The one that led treasure hunters to sacred burial grounds. The one that got people killed.
                             </p>
-                            <p className="text-slate-500 italic">
+                            <p className="font-serif text-base text-slate-500">
                               She'd been so proud of her discovery, so eager to prove her expertise. Now, standing at the entrance 
                               of this temple, she felt that same electric thrill of discovery—and it terrified her...
                             </p>
                           </div>
-                          <div className="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-sm text-emerald-600">
-                              <CheckCircle2 className="w-4 h-4" />
-                              <span className="font-semibold">Story development tracked</span>
+                          <div className="mt-6 pt-4 border-t border-slate-200 flex flex-wrap items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-emerald-600 font-semibold">
+                              <CheckCircle2 className="w-5 h-5" />
+                              <span>Development tracked</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-orange-600">
-                              <Flame className="w-4 h-4" />
-                              <span className="font-semibold">Streak: 7 days 🔥</span>
+                            <div className="flex items-center gap-2 text-sm text-orange-600 font-semibold">
+                              <Flame className="w-5 h-5" />
+                              <span>7-day streak 🔥</span>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
               {/* Key Insight */}
-              <div className="mt-8 bg-white/60 backdrop-blur-sm border-2 border-emerald-200 rounded-2xl p-6 text-center">
-                <p className="text-slate-700 font-medium">
-                  <span className="text-emerald-600 font-bold">No AI-written content.</span> StorySeed asks questions—
-                  you provide all the creativity, imagination, and words.
+              <div className="mt-12 bg-gradient-to-br from-emerald-50 to-lime-50 border-2 border-emerald-300 rounded-2xl p-8 text-center shadow-lg">
+                <p className="text-slate-800 text-lg font-medium leading-relaxed">
+                  <span className="text-emerald-700 font-bold text-xl">No AI-written content.</span>
+                  <br />
+                  <span className="text-slate-600">StorySeed guides your thinking with questions—you provide all the creativity, imagination, and words.</span>
                 </p>
               </div>
             </div>
