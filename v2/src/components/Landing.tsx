@@ -1,13 +1,21 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, BookOpen, Zap, TrendingUp, Mail, CheckCircle2, Flame, Target, Users, Star } from 'lucide-react';
+import { Sparkles, BookOpen, Zap, TrendingUp, Mail, CheckCircle2, Flame, Target, Users, Star, ArrowRight, MessageSquare, Lightbulb, Edit3 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function Landing() {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
     setIsVisible(true);
+    
+    // Auto-cycle through demo steps
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 3);
+    }, 4000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -88,16 +96,8 @@ export default function Landing() {
               </button>
             </div>
 
-            {/* Philosophy Statement */}
-            <div className="bg-white/60 backdrop-blur-sm border-2 border-emerald-200 rounded-2xl p-6 max-w-2xl mx-auto mb-12">
-              <p className="text-slate-700 font-medium text-center">
-                <span className="text-emerald-600 font-bold">No AI-written content.</span> StorySeed guides your thinking 
-                with intelligent prompts—you provide all the creativity, imagination, and words.
-              </p>
-            </div>
-
             {/* Social Proof */}
-            <div className="flex items-center justify-center gap-8 text-slate-600">
+            <div className="flex items-center justify-center gap-8 text-slate-600 mb-16">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-emerald-600" />
                 <span className="text-sm font-medium">Authors worldwide</span>
@@ -108,6 +108,195 @@ export default function Landing() {
                 <span className="text-sm font-medium">Writing daily</span>
               </div>
             </div>
+
+            {/* Visual Demo Section */}
+            <div className="max-w-5xl mx-auto">
+              <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-slate-50 to-emerald-50 p-6 border-b-2 border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                    <span className="text-sm font-semibold text-slate-600">How StorySeed Works</span>
+                  </div>
+                </div>
+                
+                <div className="p-8 md:p-12">
+                  {/* Step Navigation */}
+                  <div className="flex justify-center gap-4 mb-12">
+                    <button
+                      onClick={() => setActiveStep(0)}
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                        activeStep === 0
+                          ? 'bg-gradient-to-r from-emerald-600 to-lime-600 text-white shadow-lg'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      1. Add Story Elements
+                    </button>
+                    <button
+                      onClick={() => setActiveStep(1)}
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                        activeStep === 1
+                          ? 'bg-gradient-to-r from-emerald-600 to-lime-600 text-white shadow-lg'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      2. Get Prompts
+                    </button>
+                    <button
+                      onClick={() => setActiveStep(2)}
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                        activeStep === 2
+                          ? 'bg-gradient-to-r from-emerald-600 to-lime-600 text-white shadow-lg'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      3. Write
+                    </button>
+                  </div>
+
+                  {/* Step 1: Add Elements */}
+                  {activeStep === 0 && (
+                    <div className="animate-fade-in">
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <BookOpen className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-slate-900 mb-2">Create Your Story Foundation</h3>
+                          <p className="text-slate-600 text-lg">Add the elements of your story—characters, locations, themes, and plot points.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-slate-50 to-emerald-50 rounded-2xl p-8 border-2 border-emerald-200">
+                        <div className="space-y-4">
+                          <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                              <span className="text-xs font-semibold text-slate-500 uppercase">Character</span>
+                            </div>
+                            <h4 className="font-bold text-slate-900 text-lg">Elena Rodriguez</h4>
+                            <p className="text-slate-600 text-sm mt-1">A brilliant archaeologist haunted by her past discoveries</p>
+                          </div>
+                          
+                          <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                              <span className="text-xs font-semibold text-slate-500 uppercase">Location</span>
+                            </div>
+                            <h4 className="font-bold text-slate-900 text-lg">The Forgotten Temple</h4>
+                            <p className="text-slate-600 text-sm mt-1">Deep in the Amazon rainforest, untouched for centuries</p>
+                          </div>
+                          
+                          <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                              <span className="text-xs font-semibold text-slate-500 uppercase">Theme</span>
+                            </div>
+                            <h4 className="font-bold text-slate-900 text-lg">Redemption vs. Ambition</h4>
+                            <p className="text-slate-600 text-sm mt-1">The conflict between making amends and achieving greatness</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Get Prompts */}
+                  {activeStep === 1 && (
+                    <div className="animate-fade-in">
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Lightbulb className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-slate-900 mb-2">Receive Thought-Provoking Prompts</h3>
+                          <p className="text-slate-600 text-lg">StorySeed analyzes your elements and asks questions to deepen your story.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 border-2 border-indigo-200">
+                        <div className="flex items-start gap-4">
+                          <MessageSquare className="w-6 h-6 text-indigo-600 mt-1 flex-shrink-0" />
+                          <div>
+                            <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-indigo-200">
+                              <p className="text-slate-900 text-lg font-medium leading-relaxed">
+                                "What specific discovery from Elena's past haunts her the most? 
+                                How does this memory influence her decisions when she enters the Forgotten Temple?"
+                              </p>
+                              <div className="mt-4 pt-4 border-t border-slate-200">
+                                <div className="flex items-center gap-2 text-sm text-slate-500">
+                                  <Target className="w-4 h-4" />
+                                  <span>Focuses on: <span className="font-semibold text-emerald-600">Elena Rodriguez</span> + <span className="font-semibold text-blue-600">The Forgotten Temple</span></span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex items-center gap-2 text-indigo-600">
+                              <Zap className="w-5 h-5" />
+                              <span className="text-sm font-semibold">Intelligently connects your underdeveloped elements</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: Write */}
+                  {activeStep === 2 && (
+                    <div className="animate-fade-in">
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Edit3 className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-slate-900 mb-2">Write Your Response</h3>
+                          <p className="text-slate-600 text-lg">Answer with your own ideas—every word is yours.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 border-2 border-amber-200">
+                        <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-amber-200">
+                          <div className="flex items-center gap-2 mb-4">
+                            <Edit3 className="w-5 h-5 text-amber-600" />
+                            <span className="text-sm font-semibold text-slate-600">Your Response (247 words)</span>
+                          </div>
+                          <div className="text-slate-700 leading-relaxed space-y-3">
+                            <p>
+                              "Elena's hands still trembled when she thought about the Mayan codex she'd authenticated five years ago. 
+                              The one that led treasure hunters to sacred burial grounds. The one that got people killed.
+                            </p>
+                            <p className="text-slate-500 italic">
+                              She'd been so proud of her discovery, so eager to prove her expertise. Now, standing at the entrance 
+                              of this temple, she felt that same electric thrill of discovery—and it terrified her...
+                            </p>
+                          </div>
+                          <div className="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm text-emerald-600">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span className="font-semibold">Story development tracked</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-orange-600">
+                              <Flame className="w-4 h-4" />
+                              <span className="font-semibold">Streak: 7 days 🔥</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Key Insight */}
+              <div className="mt-8 bg-white/60 backdrop-blur-sm border-2 border-emerald-200 rounded-2xl p-6 text-center">
+                <p className="text-slate-700 font-medium">
+                  <span className="text-emerald-600 font-bold">No AI-written content.</span> StorySeed asks questions—
+                  you provide all the creativity, imagination, and words.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -116,134 +305,106 @@ export default function Landing() {
       <div id="features" className="relative z-10 max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Tools That Draw Out Your Best Writing
+            Powerful Tools for Serious Authors
           </h2>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            We don't write for you. We help you uncover the story only you can tell.
+            Everything you need to develop your story, build consistency, and finish what you start.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Feature 1 */}
-          <div className="group p-8 bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
-              <Zap className="w-7 h-7 text-white" />
+          <div className="group p-6 bg-white rounded-xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
+              <Lightbulb className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Thought-Provoking Prompts</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Intelligent questions that make you think deeper about your characters, 
-              settings, and plot. You write—we guide your creative exploration.
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Smart Prompts</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Questions that deepen your characters, settings, and plot
             </p>
           </div>
 
           {/* Feature 2 */}
-          <div className="group p-8 bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
-              <Target className="w-7 h-7 text-white" />
+          <div className="group p-6 bg-white rounded-xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
+              <Target className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Smart Element Tracking</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Organize characters, locations, themes, and plot points. 
-              Never lose track of your story's moving pieces.
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Element Tracking</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Organize all your story pieces in one place
             </p>
           </div>
 
           {/* Feature 3 */}
-          <div className="group p-8 bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
-              <Mail className="w-7 h-7 text-white" />
+          <div className="group p-6 bg-white rounded-xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
+              <Mail className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Daily Writing Practice</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Personalized prompts delivered to your inbox. Not AI-generated content—
-              thought-provoking questions that spark your own creativity.
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Daily Emails</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Prompts delivered to your inbox to build the habit
             </p>
           </div>
 
           {/* Feature 4 */}
-          <div className="group p-8 bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
-              <TrendingUp className="w-7 h-7 text-white" />
+          <div className="group p-6 bg-white rounded-xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
+              <Flame className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Track Your Growth</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Celebrate your writing streaks and development progress. 
-              Every word is yours—we just help you see how far you've come.
-            </p>
-          </div>
-
-          {/* Feature 5 */}
-          <div className="group p-8 bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
-              <BookOpen className="w-7 h-7 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Multi-Project Support</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Work on multiple stories simultaneously. Organize series, standalone novels, 
-              and short stories all in one place.
-            </p>
-          </div>
-
-          {/* Feature 6 */}
-          <div className="group p-8 bg-white rounded-2xl border-2 border-slate-200 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
-              <Flame className="w-7 h-7 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Build Your Habit</h3>
-            <p className="text-slate-600 leading-relaxed">
-              Show up daily, explore your ideas, develop your voice. 
-              Consistent practice is how great stories get written.
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Streak Tracking</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Stay motivated with daily writing streaks
             </p>
           </div>
         </div>
       </div>
 
-      {/* How It Works Section */}
-      <div className="relative bg-gradient-to-br from-emerald-600 to-lime-600 py-24">
+      {/* Why Authors Love It Section */}
+      <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 py-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Your Creative Process, Enhanced
+              Why Authors Choose StorySeed
             </h2>
-            <p className="text-xl text-emerald-50 max-w-2xl mx-auto">
-              A simple process that helps you discover and develop your unique story.
+            <p className="text-xl text-slate-300 max-w-2xl mx-auto">
+              Built by authors, for authors who respect the craft of writing.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Step 1 */}
-            <div className="relative p-8 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-              <div className="absolute -top-6 left-8 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-emerald-600 shadow-lg">
-                1
+            {/* Reason 1 */}
+            <div className="p-8 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+              <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Outline Your World</h3>
-              <p className="text-emerald-50 leading-relaxed">
-                Input your book's foundation—characters, locations, themes, plot ideas. 
-                StorySeed organizes what you create.
+              <h3 className="text-xl font-bold text-white mb-3">Your Voice Stays Yours</h3>
+              <p className="text-slate-300 leading-relaxed">
+                No AI ghostwriting. No generic content. Just intelligent questions that 
+                help you discover what only you can write.
               </p>
             </div>
 
-            {/* Step 2 */}
-            <div className="relative p-8 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-              <div className="absolute -top-6 left-8 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-emerald-600 shadow-lg">
-                2
+            {/* Reason 2 */}
+            <div className="p-8 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+              <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-6">
+                <Target className="w-6 h-6 text-emerald-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Explore Through Prompts</h3>
-              <p className="text-emerald-50 leading-relaxed">
-                Answer thought-provoking questions about underdeveloped areas. 
-                Discover details you didn't know were there.
+              <h3 className="text-xl font-bold text-white mb-3">Focus Where It Matters</h3>
+              <p className="text-slate-300 leading-relaxed">
+                Our prompts intelligently target your underdeveloped story elements, 
+                ensuring balanced, thorough world-building.
               </p>
             </div>
 
-            {/* Step 3 */}
-            <div className="relative p-8 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-              <div className="absolute -top-6 left-8 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-emerald-600 shadow-lg">
-                3
+            {/* Reason 3 */}
+            <div className="p-8 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:bg-white/10 transition-all">
+              <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-6">
+                <TrendingUp className="w-6 h-6 text-emerald-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Write Consistently</h3>
-              <p className="text-emerald-50 leading-relaxed">
-                Show up daily to develop your ideas. Your words, your voice, your story—
-                finished through dedication.
+              <h3 className="text-xl font-bold text-white mb-3">Build Real Progress</h3>
+              <p className="text-slate-300 leading-relaxed">
+                Track your consistency, celebrate milestones, and watch your story 
+                develop through your own dedicated effort.
               </p>
             </div>
           </div>
