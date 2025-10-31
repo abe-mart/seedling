@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, BookOpen, Zap, TrendingUp, Mail, CheckCircle2, Flame, Target, Users, Star, ArrowRight, MessageSquare, Lightbulb, Edit3 } from 'lucide-react';
+import { Sparkles, BookOpen, Zap, TrendingUp, Mail, CheckCircle2, Flame, Target, Users, Star, ArrowRight, MessageSquare, Lightbulb, Edit3, Sprout } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 
 export default function Landing() {
@@ -54,7 +54,7 @@ export default function Landing() {
         <nav className="relative z-10 max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Sparkles className="w-6 h-6 text-white" />
+              <Sprout className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-lime-600 bg-clip-text text-transparent">
               StorySeed
