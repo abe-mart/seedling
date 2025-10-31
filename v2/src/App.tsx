@@ -2,6 +2,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
+import Landing from './components/Landing';
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import PromptInterface from './components/PromptInterface';
@@ -43,10 +44,14 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/auth" element={!user ? <Auth /> : <Navigate to="/" replace />} />
+      <Route path="/auth" element={!user ? <Auth /> : <Navigate to="/dashboard" replace />} />
       <Route path="/write/:logId" element={<DailyPromptWrite />} />
+      <Route 
+        path="/" 
+        element={!user ? <Landing /> : <Navigate to="/dashboard" replace />} 
+      />
       <Route
-        path="/"
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
