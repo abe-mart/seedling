@@ -1,21 +1,43 @@
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, BookOpen, Zap, TrendingUp, Mail, CheckCircle2, Flame, Target, Users, Star, ArrowRight, MessageSquare, Lightbulb, Edit3 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export default function Landing() {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  
+  const step1Ref = useRef<HTMLDivElement>(null);
+  const step2Ref = useRef<HTMLDivElement>(null);
+  const step3Ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsVisible(true);
     
-    // Auto-cycle through demo steps
-    const interval = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % 3);
-    }, 4000);
-    
-    return () => clearInterval(interval);
+    // Intersection Observer to detect which step is in view
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const stepIndex = entry.target.getAttribute('data-step');
+            if (stepIndex !== null) {
+              setActiveStep(parseInt(stepIndex));
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of the element is visible
+        rootMargin: '-20% 0px -20% 0px' // Center focus area
+      }
+    );
+
+    // Observe all step elements
+    if (step1Ref.current) observer.observe(step1Ref.current);
+    if (step2Ref.current) observer.observe(step2Ref.current);
+    if (step3Ref.current) observer.observe(step3Ref.current);
+
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -120,7 +142,11 @@ export default function Landing() {
 
               <div className="space-y-8">
                 {/* Step 1: Add Elements */}
-                <div className={`transition-all duration-700 ${activeStep >= 0 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}>
+                <div 
+                  ref={step1Ref}
+                  data-step="0"
+                  className={`transition-all duration-700 ${activeStep >= 0 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}
+                >
                   <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
                     <div className="bg-gradient-to-r from-emerald-50 to-lime-50 p-6 border-b-2 border-emerald-200">
                       <div className="flex items-center gap-4">
@@ -179,7 +205,11 @@ export default function Landing() {
                 </div>
 
                 {/* Step 2: Get Prompts */}
-                <div className={`transition-all duration-700 ${activeStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}>
+                <div 
+                  ref={step2Ref}
+                  data-step="1"
+                  className={`transition-all duration-700 ${activeStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}
+                >
                   <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
                     <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 border-b-2 border-indigo-200">
                       <div className="flex items-center gap-4">
@@ -223,7 +253,11 @@ export default function Landing() {
                 </div>
 
                 {/* Step 3: Write */}
-                <div className={`transition-all duration-700 ${activeStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}>
+                <div 
+                  ref={step3Ref}
+                  data-step="2"
+                  className={`transition-all duration-700 ${activeStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4'}`}
+                >
                   <div className="bg-white rounded-3xl shadow-2xl border-2 border-slate-200 overflow-hidden">
                     <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 border-b-2 border-amber-200">
                       <div className="flex items-center gap-4">
