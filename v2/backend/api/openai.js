@@ -35,7 +35,7 @@ export async function generateAIPrompt(options) {
 
   try {
     const completion = await getOpenAIClient().chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
