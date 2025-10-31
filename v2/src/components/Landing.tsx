@@ -53,22 +53,22 @@ export default function Landing() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full mb-8 animate-fade-in">
               <Star className="w-4 h-4 text-emerald-600" />
-              <span className="text-sm font-semibold text-emerald-800">AI-Powered Story Development</span>
+              <span className="text-sm font-semibold text-emerald-800">For Authors, By Authors</span>
             </div>
 
             {/* Headline */}
             <h1 className="text-6xl md:text-7xl font-extrabold text-slate-900 mb-6 leading-tight">
-              Plant Your Story.
+              Your Story.
               <br />
               <span className="bg-gradient-to-r from-emerald-600 to-lime-600 bg-clip-text text-transparent">
-                Watch It Grow.
+                Your Words.
               </span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-xl md:text-2xl text-slate-600 mb-12 leading-relaxed max-w-3xl mx-auto">
-              Transform scattered ideas into compelling stories with AI-powered prompts, 
-              intelligent tracking, and daily writing habits that stick.
+              StorySeed never writes for you—it helps you discover what you want to write. 
+              Smart prompts that draw out your ideas and help you develop your unique voice.
             </p>
 
             {/* CTA Buttons */}
@@ -88,16 +88,24 @@ export default function Landing() {
               </button>
             </div>
 
+            {/* Philosophy Statement */}
+            <div className="bg-white/60 backdrop-blur-sm border-2 border-emerald-200 rounded-2xl p-6 max-w-2xl mx-auto mb-12">
+              <p className="text-slate-700 font-medium text-center">
+                <span className="text-emerald-600 font-bold">No AI-written content.</span> StorySeed guides your thinking 
+                with intelligent prompts—you provide all the creativity, imagination, and words.
+              </p>
+            </div>
+
             {/* Social Proof */}
             <div className="flex items-center justify-center gap-8 text-slate-600">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-emerald-600" />
-                <span className="text-sm font-medium">Writers worldwide</span>
+                <span className="text-sm font-medium">Authors worldwide</span>
               </div>
               <div className="hidden sm:block w-px h-6 bg-slate-300"></div>
               <div className="flex items-center gap-2">
                 <Flame className="w-5 h-5 text-orange-500" />
-                <span className="text-sm font-medium">Daily streaks active</span>
+                <span className="text-sm font-medium">Writing daily</span>
               </div>
             </div>
           </div>
@@ -108,10 +116,10 @@ export default function Landing() {
       <div id="features" className="relative z-10 max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            Everything You Need to Build Your Story
+            Tools That Draw Out Your Best Writing
           </h2>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Professional tools designed for serious writers who want to finish what they start.
+            We don't write for you. We help you uncover the story only you can tell.
           </p>
         </div>
 
@@ -121,10 +129,10 @@ export default function Landing() {
             <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
               <Zap className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">AI Story Prompts</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">Thought-Provoking Prompts</h3>
             <p className="text-slate-600 leading-relaxed">
-              Get intelligent, context-aware writing prompts that develop your characters, 
-              world-building, and plot points naturally.
+              Intelligent questions that make you think deeper about your characters, 
+              settings, and plot. You write—we guide your creative exploration.
             </p>
           </div>
 
@@ -145,10 +153,10 @@ export default function Landing() {
             <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
               <Mail className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Daily Email Prompts</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">Daily Writing Practice</h3>
             <p className="text-slate-600 leading-relaxed">
-              Receive personalized writing prompts in your inbox. Build the habit, 
-              maintain your streak, finish your story.
+              Personalized prompts delivered to your inbox. Not AI-generated content—
+              thought-provoking questions that spark your own creativity.
             </p>
           </div>
 
@@ -157,10 +165,10 @@ export default function Landing() {
             <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
               <TrendingUp className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Progress Analytics</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">Track Your Growth</h3>
             <p className="text-slate-600 leading-relaxed">
-              Track your writing streaks, word counts, and story development. 
-              Watch your progress grow with beautiful visualizations.
+              Celebrate your writing streaks and development progress. 
+              Every word is yours—we just help you see how far you've come.
             </p>
           </div>
 
@@ -181,10 +189,10 @@ export default function Landing() {
             <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
               <Flame className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">Streak Motivation</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">Build Your Habit</h3>
             <p className="text-slate-600 leading-relaxed">
-              Build consistency with streak tracking. Turn daily writing into a powerful 
-              habit that compounds over time.
+              Show up daily, explore your ideas, develop your voice. 
+              Consistent practice is how great stories get written.
             </p>
           </div>
         </div>
@@ -195,10 +203,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Start Writing in Minutes
+              Your Creative Process, Enhanced
             </h2>
             <p className="text-xl text-emerald-50 max-w-2xl mx-auto">
-              A simple, proven process to go from scattered ideas to structured stories.
+              A simple process that helps you discover and develop your unique story.
             </p>
           </div>
 
@@ -208,10 +216,10 @@ export default function Landing() {
               <div className="absolute -top-6 left-8 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-emerald-600 shadow-lg">
                 1
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Create Your Story</h3>
+              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Outline Your World</h3>
               <p className="text-emerald-50 leading-relaxed">
-                Add your book title and core story elements—characters, locations, 
-                themes, and plot points.
+                Input your book's foundation—characters, locations, themes, plot ideas. 
+                StorySeed organizes what you create.
               </p>
             </div>
 
@@ -220,10 +228,10 @@ export default function Landing() {
               <div className="absolute -top-6 left-8 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-emerald-600 shadow-lg">
                 2
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Get Smart Prompts</h3>
+              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Explore Through Prompts</h3>
               <p className="text-emerald-50 leading-relaxed">
-                Receive AI-generated prompts that focus on underdeveloped elements. 
-                Watch your story take shape.
+                Answer thought-provoking questions about underdeveloped areas. 
+                Discover details you didn't know were there.
               </p>
             </div>
 
@@ -232,10 +240,10 @@ export default function Landing() {
               <div className="absolute -top-6 left-8 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-emerald-600 shadow-lg">
                 3
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Build Your Habit</h3>
+              <h3 className="text-2xl font-bold text-white mb-3 mt-4">Write Consistently</h3>
               <p className="text-emerald-50 leading-relaxed">
-                Write daily, track your streaks, and watch your story grow. 
-                Consistency is the key to finishing.
+                Show up daily to develop your ideas. Your words, your voice, your story—
+                finished through dedication.
               </p>
             </div>
           </div>
@@ -254,9 +262,9 @@ export default function Landing() {
                 ))}
               </div>
               <blockquote className="text-2xl md:text-3xl font-medium text-white mb-6 leading-relaxed">
-                "StorySeed transformed how I approach my novels. The AI prompts are eerily good 
-                at knowing exactly what parts of my story need development. I've never been 
-                more consistent with my writing."
+                "StorySeed doesn't write my story—it asks the questions I didn't know I needed 
+                to answer. Every word is mine, but the prompts helped me dig deeper into my 
+                characters and world than I ever could alone."
               </blockquote>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-lime-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
@@ -276,10 +284,10 @@ export default function Landing() {
       <div className="max-w-7xl mx-auto px-6 py-24">
         <div className="bg-gradient-to-br from-emerald-50 to-lime-50 rounded-3xl p-12 md:p-16 text-center border-2 border-emerald-200">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
-            Ready to Finish Your Story?
+            Ready to Write Your Story?
           </h2>
           <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Join writers who are building the habit and making real progress on their books.
+            Join authors who are developing their craft and bringing their unique stories to life.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
