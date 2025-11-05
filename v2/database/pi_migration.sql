@@ -10,58 +10,58 @@
 
 -- ==================== BETTER AUTH TABLES ====================
 -- Better Auth will auto-create these, but we define them here for reference
+-- IMPORTANT: Better Auth uses camelCase for column names!
 
 CREATE TABLE IF NOT EXISTS "user" (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
-  email_verified BOOLEAN NOT NULL DEFAULT false,
+  "emailVerified" BOOLEAN NOT NULL DEFAULT false,
   name TEXT,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS session (
   id TEXT PRIMARY KEY,
-  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
   token TEXT UNIQUE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  ip_address TEXT,
-  user_agent TEXT,
-  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "ipAddress" TEXT,
+  "userAgent" TEXT,
+  "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS account (
   id TEXT PRIMARY KEY,
-  account_id TEXT NOT NULL,
-  provider_id TEXT NOT NULL,
-  user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  access_token TEXT,
-  refresh_token TEXT,
-  id_token TEXT,
-  access_token_expires_at TIMESTAMP WITH TIME ZONE,
-  refresh_token_expires_at TIMESTAMP WITH TIME ZONE,
+  "accountId" TEXT NOT NULL,
+  "providerId" TEXT NOT NULL,
+  "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  "accessToken" TEXT,
+  "refreshToken" TEXT,
+  "idToken" TEXT,
+  "accessTokenExpiresAt" TIMESTAMP WITH TIME ZONE,
+  "refreshTokenExpiresAt" TIMESTAMP WITH TIME ZONE,
   scope TEXT,
   password TEXT,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS verification (
   id TEXT PRIMARY KEY,
   identifier TEXT NOT NULL,
   value TEXT NOT NULL,
-  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE,
-  updated_at TIMESTAMP WITH TIME ZONE
+  "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE,
+  "updatedAt" TIMESTAMP WITH TIME ZONE
 );
 
 -- ==================== APPLICATION TABLES ====================
 
 -- User profiles (extends Better Auth user table)
 CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT UNIQUE NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  user_id TEXT PRIMARY KEY REFERENCES "user"(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   display_name TEXT,
   timezone TEXT DEFAULT 'UTC',
@@ -149,9 +149,10 @@ CREATE TABLE IF NOT EXISTS user_settings (
 
 -- ==================== INDEXES ====================
 
-CREATE INDEX IF NOT EXISTS idx_session_user_id ON session(user_id);
-CREATE INDEX IF NOT EXISTS idx_account_user_id ON account(user_id);
-CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
+-- Better Auth tables use camelCase
+CREATE INDEX IF NOT EXISTS idx_session_user_id ON session("userId");
+CREATE INDEX IF NOT EXISTS idx_account_user_id ON account("userId");
+-- profiles.user_id is the primary key, no need for separate index
 CREATE INDEX IF NOT EXISTS idx_series_user_id ON series(user_id);
 CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
 CREATE INDEX IF NOT EXISTS idx_books_series_id ON books(series_id);

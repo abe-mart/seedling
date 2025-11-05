@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS daily_prompt_preferences (
     delivery_time TIME DEFAULT '09:00:00',
     timezone TEXT DEFAULT 'America/New_York',
     focus_story_id UUID REFERENCES books(id) ON DELETE SET NULL,
+    focus_element_ids UUID[] DEFAULT '{}',
     prompt_rotation TEXT DEFAULT 'intelligent' CHECK (prompt_rotation IN ('intelligent', 'random', 'sequential')),
     
     -- Prompt type preferences
@@ -57,7 +58,8 @@ CREATE TABLE IF NOT EXISTS daily_prompts_sent (
     
     -- Email details
     email_format TEXT NOT NULL,
-    resend_email_id TEXT
+    resend_email_id TEXT,
+    is_test BOOLEAN DEFAULT false
 );
 
 -- Indexes for performance
@@ -65,7 +67,8 @@ CREATE INDEX IF NOT EXISTS idx_daily_prompt_preferences_enabled ON daily_prompt_
 CREATE INDEX IF NOT EXISTS idx_daily_prompts_sent_user_id ON daily_prompts_sent(user_id);
 CREATE INDEX IF NOT EXISTS idx_daily_prompts_sent_sent_at ON daily_prompts_sent(sent_at);
 CREATE INDEX IF NOT EXISTS idx_daily_prompts_sent_responded ON daily_prompts_sent(responded_at) WHERE responded_at IS NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_prompts_sent_unique_user_day ON daily_prompts_sent(user_id, (DATE(sent_at)));
+-- Ensure only one real daily prompt per user per day (exclude test emails from uniqueness constraint)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_prompts_sent_unique_user_day ON daily_prompts_sent(user_id, (DATE(sent_at))) WHERE is_test = false;
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_daily_prompt_preferences_updated_at()
