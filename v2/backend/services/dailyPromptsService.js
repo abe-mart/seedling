@@ -417,7 +417,7 @@ export async function getUsersForDelivery() {
      WHERE enabled = true
      AND (
        last_prompt_sent_at IS NULL 
-       OR DATE(last_prompt_sent_at AT TIME ZONE timezone) < CURRENT_DATE
+       OR DATE(last_prompt_sent_at AT TIME ZONE timezone) < DATE(NOW() AT TIME ZONE timezone)
      )`
   );
 
