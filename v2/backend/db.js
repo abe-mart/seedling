@@ -20,6 +20,10 @@ export const pool = new Pool({
   database: process.env.DB_NAME || 'seedling',
   password: process.env.DB_PASSWORD,
   port: parseInt(process.env.DB_PORT || '5432'),
+  // Connection pool limits to prevent exhaustion
+  max: 10, // maximum number of clients in pool
+  idleTimeoutMillis: 30000, // close idle clients after 30 seconds
+  connectionTimeoutMillis: 5000, // return error after 5s if can't connect
 });
 
 // Test connection

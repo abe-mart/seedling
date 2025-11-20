@@ -184,6 +184,17 @@ export const dailyPromptsAPI = {
       body: JSON.stringify(preferences),
     }),
   getHistory: () => fetchAPI('/api/daily-prompts/history'),
+  getLog: (logId: string) => fetchAPI(`/api/daily-prompts/logs/${logId}`),
+  respondToLog: (logId: string, data: { response_text: string }) =>
+    fetchAPI(`/api/daily-prompts/logs/${logId}/respond`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  skipLog: (logId: string, reason?: string) =>
+    fetchAPI(`/api/daily-prompts/logs/${logId}/skip`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
 };
 
 // Export a default object with all APIs

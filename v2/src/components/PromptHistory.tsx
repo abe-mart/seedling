@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag, Edit2, Save, X, Search, Filter, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Calendar, BookOpen, Lightbulb, Tag, Edit2, Save, X, Search, Filter, ChevronDown, MessageSquare, Clock, SkipForward, Loader2, Send } from 'lucide-react';
 import { Database } from '../lib/database.types';
 import { api } from '../lib/api';
 import { SkeletonPromptCard } from './SkeletonLoader';
@@ -42,6 +42,13 @@ export default function PromptHistory() {
   const [editedText, setEditedText] = useState('');
   const [saving, setSaving] = useState(false);
   
+  // Daily Prompts state
+  const [dailyPromptHistory, setDailyPromptHistory] = useState<any[]>([]);
+  const [loadingDailyPromptHistory, setLoadingDailyPromptHistory] = useState(false);
+  const [activeDailyPrompt, setActiveDailyPrompt] = useState<any | null>(null);
+  const [dailyResponseText, setDailyResponseText] = useState('');
+  const [submittingDailyResponse, setSubmittingDailyResponse] = useState(false);
+  
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBookFilter, setSelectedBookFilter] = useState<string>('all');
@@ -51,6 +58,7 @@ export default function PromptHistory() {
 
   useEffect(() => {
     loadPrompts();
+    loadDailyPromptHistory();
   }, [user]);
 
   useEffect(() => {
@@ -152,6 +160,73 @@ export default function PromptHistory() {
       }
     } catch (error) {
       console.error('Error loading responses:', error);
+    }
+  };
+
+  const loadDailyPromptHistory = async () => {
+    if (!user) return;
+
+    setLoadingDailyPromptHistory(true);
+    try {
+      const data = await api.dailyPrompts.getHistory();
+      setDailyPromptHistory(data || []);
+    } catch (error) {
+      console.error('Error loading daily prompt history:', error);
+      setDailyPromptHistory([]);
+    } finally {
+      setLoadingDailyPromptHistory(false);
+    }
+  };
+
+  const handleOpenDailyPrompt = (dailyPrompt: any) => {
+    setActiveDailyPrompt(dailyPrompt);
+    setDailyResponseText('');
+  };
+
+  const handleCloseDailyPrompt = () => {
+    setActiveDailyPrompt(null);
+    setDailyResponseText('');
+  };
+
+  const handleSubmitDailyPromptResponse = async () => {
+    if (!activeDailyPrompt || !dailyResponseText.trim()) {
+      toast.error('Please write something before submitting');
+      return;
+    }
+
+    setSubmittingDailyResponse(true);
+    try {
+      await api.dailyPrompts.respondToLog(activeDailyPrompt.id, {
+        response_text: dailyResponseText
+      });
+      
+      toast.success('Response saved successfully!');
+      
+      // Remove from history
+      setDailyPromptHistory(prev => prev.filter(p => p.id !== activeDailyPrompt.id));
+      handleCloseDailyPrompt();
+    } catch (error) {
+      console.error('Error submitting daily prompt response:', error);
+      toast.error('Failed to save response');
+    } finally {
+      setSubmittingDailyResponse(false);
+    }
+  };
+
+  const handleSkipDailyPrompt = async (dailyPromptId: string) => {
+    if (!confirm('Are you sure you want to skip this prompt?')) {
+      return;
+    }
+
+    try {
+      await api.dailyPrompts.skipLog(dailyPromptId);
+      toast.success('Prompt skipped');
+      
+      // Remove from history
+      setDailyPromptHistory(prev => prev.filter(p => p.id !== dailyPromptId));
+    } catch (error) {
+      console.error('Error skipping daily prompt:', error);
+      toast.error('Failed to skip prompt');
     }
   };
 
@@ -272,6 +347,42 @@ export default function PromptHistory() {
     return Array.from(types).sort();
   }, [prompts]);
 
+  // Filter daily prompt history with the same filters
+  const filteredDailyPrompts = useMemo(() => {
+    return dailyPromptHistory.filter(dailyPrompt => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const promptMatches = dailyPrompt.prompt_text?.toLowerCase().includes(query);
+        const titleMatches = dailyPrompt.book_title?.toLowerCase().includes(query);
+        
+        if (!promptMatches && !titleMatches) {
+          return false;
+        }
+      }
+
+      // Book filter - match by book title since we don't have book_id in daily prompt logs
+      if (selectedBookFilter !== 'all') {
+        const book = bookMap.get(selectedBookFilter);
+        if (!book || dailyPrompt.book_title !== book.title) {
+          return false;
+        }
+      }
+
+      // Type filter
+      if (selectedTypeFilter !== 'all' && dailyPrompt.prompt_type !== selectedTypeFilter) {
+        return false;
+      }
+
+      // Answer status - daily prompts in history are always unanswered
+      if (answerStatusFilter === 'answered') {
+        return false;
+      }
+
+      return true;
+    });
+  }, [dailyPromptHistory, searchQuery, selectedBookFilter, selectedTypeFilter, answerStatusFilter, bookMap]);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm sticky top-0 z-10">
@@ -390,6 +501,85 @@ export default function PromptHistory() {
             </div>
           )}
         </div>
+
+        {/* Missed Daily Prompts Section */}
+        {!loading && filteredDailyPrompts.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Missed Daily Prompts
+              <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
+                ({filteredDailyPrompts.length})
+              </span>
+            </h2>
+            <div className="space-y-4">
+              {filteredDailyPrompts.map((dailyPrompt) => {
+                const colors = PROMPT_TYPE_COLORS[dailyPrompt.prompt_type] || PROMPT_TYPE_COLORS.general;
+                
+                return (
+                  <div
+                    key={dailyPrompt.id}
+                    className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border-l-4 border-l-amber-500 border-t border-r border-b border-slate-200 dark:border-slate-700 hover:shadow-md transition-all"
+                  >
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      {/* Date */}
+                      <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                        <Calendar className="w-4 h-4" />
+                        {formatDate(dailyPrompt.sent_at)}
+                      </div>
+                      
+                      <div className="h-4 w-px bg-slate-300 dark:bg-slate-600" />
+                      
+                      {/* Story Tag */}
+                      {dailyPrompt.book_title && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 dark:bg-slate-600 text-white border border-slate-900 dark:border-slate-600">
+                          <BookOpen className="w-3 h-3" />
+                          {dailyPrompt.book_title}
+                        </span>
+                      )}
+                      
+                      {/* Prompt Type Tag */}
+                      {dailyPrompt.prompt_type && (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}>
+                          {PROMPT_TYPE_LABELS[dailyPrompt.prompt_type] || 'General'}
+                        </span>
+                      )}
+                      
+                      {/* Missed Badge */}
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+                        <Clock className="w-3 h-3" />
+                        Missed
+                      </span>
+                    </div>
+
+                    <div className="prose prose-slate dark:prose-invert max-w-none mb-4">
+                      <p className="text-slate-900 dark:text-white leading-relaxed whitespace-pre-wrap">
+                        {dailyPrompt.prompt_text}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+                      <button
+                        onClick={() => handleOpenDailyPrompt(dailyPrompt)}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-600 hover:bg-slate-800 dark:hover:bg-slate-500 text-white rounded-lg font-medium text-sm transition-colors"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Answer Now
+                      </button>
+                      <button
+                        onClick={() => handleSkipDailyPrompt(dailyPrompt.id)}
+                        className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg font-medium text-sm transition-colors"
+                      >
+                        <SkipForward className="w-4 h-4" />
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-4">
@@ -576,6 +766,81 @@ export default function PromptHistory() {
           </div>
         )}
       </main>
+
+      {/* Daily Prompt Response Modal */}
+      {activeDailyPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Answer Daily Prompt</h3>
+              <button
+                onClick={handleCloseDailyPrompt}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {activeDailyPrompt.book_title && (
+                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <BookOpen className="w-4 h-4" />
+                  <span className="font-medium">{activeDailyPrompt.book_title}</span>
+                </div>
+              )}
+
+              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <p className="text-slate-900 dark:text-white leading-relaxed">
+                  {activeDailyPrompt.prompt_text}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Your Response
+                </label>
+                <textarea
+                  value={dailyResponseText}
+                  onChange={(e) => setDailyResponseText(e.target.value)}
+                  placeholder="Write your response here..."
+                  className="w-full min-h-[200px] px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-500 focus:border-transparent resize-y bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  disabled={submittingDailyResponse}
+                />
+                <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  {dailyResponseText.trim().split(/\s+/).filter(w => w).length} words
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSubmitDailyPromptResponse}
+                  disabled={submittingDailyResponse || !dailyResponseText.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 dark:bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-800 dark:hover:bg-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submittingDailyResponse ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Submit Response
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleCloseDailyPrompt}
+                  disabled={submittingDailyResponse}
+                  className="px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

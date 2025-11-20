@@ -335,6 +335,19 @@ app.get('/api/responses', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/api/responses/all', requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM responses WHERE user_id = $1 ORDER BY created_at ASC',
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching responses:', error);
+    res.status(500).json({ error: 'Failed to fetch responses' });
+  }
+});
+
 app.post('/api/responses', requireAuth, async (req, res) => {
   const { prompt_id, response_text, element_tags, word_count } = req.body;
   try {
@@ -493,6 +506,31 @@ app.put('/api/daily-prompts/preferences', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error updating daily prompt preferences:', error);
     res.status(500).json({ error: 'Failed to update preferences' });
+  }
+});
+
+// Get user's daily prompt history - MUST be before /:logId route!
+app.get('/api/daily-prompts/history', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT dps.*, p.prompt_text, p.prompt_type,
+              se.name as element_name, b.title as book_title
+       FROM daily_prompts_sent dps
+       JOIN prompts p ON dps.prompt_id = p.id
+       LEFT JOIN story_elements se ON dps.element_id = se.id
+       LEFT JOIN books b ON p.book_id = b.id
+       WHERE dps.user_id = $1
+         AND dps.response_id IS NULL
+         AND dps.skipped = false
+       ORDER BY dps.sent_at DESC
+       LIMIT 30`,
+      [req.user.id]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error('Error getting prompt history:', error);
+    res.status(500).json({ error: 'Failed to get history' });
   }
 });
 
@@ -692,28 +730,108 @@ app.post('/api/daily-prompts/skip/:logId', async (req, res) => {
   }
 });
 
-// Get user's daily prompt history
-app.get('/api/daily-prompts/history', requireAuth, async (req, res) => {
+// ===== Authenticated daily prompt management =====
+
+// Get a specific daily prompt log for the authenticated user
+app.get('/api/daily-prompts/logs/:logId', requireAuth, async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT dps.*, p.prompt_text, p.prompt_type,
-              se.name as element_name, b.title as book_title,
-              r.response_text, r.word_count
-       FROM daily_prompts_sent dps
-       JOIN prompts p ON dps.prompt_id = p.id
-       LEFT JOIN story_elements se ON dps.element_id = se.id
-       LEFT JOIN books b ON p.book_id = b.id
-       LEFT JOIN responses r ON dps.response_id = r.id
-       WHERE dps.user_id = $1
-       ORDER BY dps.sent_at DESC
-       LIMIT 30`,
-      [req.user.id]
+    const { logId } = req.params;
+    const promptLog = await getPromptLog(logId);
+
+    if (!promptLog) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    if (promptLog.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    res.json(promptLog);
+  } catch (error) {
+    console.error('Error fetching daily prompt log:', error);
+    res.status(500).json({ error: 'Failed to fetch prompt log' });
+  }
+});
+
+// Respond to a daily prompt from within the app
+app.post('/api/daily-prompts/logs/:logId/respond', requireAuth, async (req, res) => {
+  try {
+    const { logId } = req.params;
+    const { response_text } = req.body;
+
+    if (!response_text || !response_text.trim()) {
+      return res.status(400).json({ error: 'Response text is required' });
+    }
+
+    const promptLog = await getPromptLog(logId);
+
+    if (!promptLog) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    if (promptLog.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    if (promptLog.response_id) {
+      return res.status(400).json({ error: 'Prompt already answered' });
+    }
+
+    const trimmed = response_text.trim();
+    const wordCount = trimmed.length === 0 ? 0 : trimmed.split(/\s+/).length;
+
+    const result = await pool.query(
+      `INSERT INTO responses (prompt_id, user_id, response_text, element_tags, word_count, completed_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       RETURNING *`,
+      [
+        promptLog.prompt_id,
+        req.user.id,
+        trimmed,
+        promptLog.element_references || [],
+        wordCount
+      ]
     );
 
-    res.json(rows);
+    await markPromptResponded(logId, result.rows[0].id);
+
+    res.json({ success: true, response: result.rows[0] });
   } catch (error) {
-    console.error('Error getting prompt history:', error);
-    res.status(500).json({ error: 'Failed to get history' });
+    console.error('Error responding to daily prompt:', error);
+    res.status(500).json({ error: 'Failed to submit response' });
+  }
+});
+
+// Skip/discard a daily prompt from within the app
+app.post('/api/daily-prompts/logs/:logId/skip', requireAuth, async (req, res) => {
+  try {
+    const { logId } = req.params;
+    const { reason } = req.body;
+
+    const promptLog = await getPromptLog(logId);
+
+    if (!promptLog) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+
+    if (promptLog.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    if (promptLog.response_id) {
+      return res.status(400).json({ error: 'Prompt already answered' });
+    }
+
+    if (promptLog.skipped) {
+      return res.status(400).json({ error: 'Prompt already skipped' });
+    }
+
+    const result = await markPromptSkipped(logId, reason || 'User skipped from app');
+
+    res.json({ success: true, paused: result.paused });
+  } catch (error) {
+    console.error('Error skipping daily prompt:', error);
+    res.status(500).json({ error: 'Failed to skip prompt' });
   }
 });
 

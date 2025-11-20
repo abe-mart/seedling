@@ -45,33 +45,35 @@ cron.schedule('0 * * * *', async () => {
       try {
         // Check if it's time to send for this user
         const now = new Date();
+        
+        // Get user's current date and time in their timezone
+        const userDate = formatInTimeZone(now, user.timezone, 'yyyy-MM-dd');
         const userTime = formatInTimeZone(now, user.timezone, 'HH:mm');
         const deliveryTime = user.delivery_time.substring(0, 5); // Format: "09:00"
 
-        // Check if already sent today (using UTC for consistency with unique constraint)
-        // The unique constraint uses: (sent_at AT TIME ZONE 'UTC')::date
+        // Check if already sent for this specific date in user's timezone
+        // This ensures we send exactly once per user's local day
         const { rows: sentToday } = await db.query(
           `SELECT id FROM daily_prompts_sent
            WHERE user_id = $1
-           AND (sent_at AT TIME ZONE 'UTC')::date = CURRENT_DATE
+           AND (sent_at AT TIME ZONE $2)::date = $3::date
            AND is_test = false`,
-          [user.user_id]
+          [user.user_id, user.timezone, userDate]
         );
 
         if (sentToday.length > 0) {
-          console.log(`Already sent prompt to user ${user.user_id} today (UTC: ${new Date().toISOString().split('T')[0]})`);
+          // Already sent for this local date
           continue;
         }
 
-        // Check if current hour matches delivery hour (within same hour window)
-        const currentHour = parseInt(userTime.split(':')[0]);
-        const deliveryHour = parseInt(deliveryTime.split(':')[0]);
-
-        if (currentHour !== deliveryHour) {
-          continue; // Not time yet
+        // Check if it's time to send (or past time)
+        // This "catch-up" logic handles cases where the server might have been down
+        // during the exact delivery hour.
+        if (userTime < deliveryTime) {
+          continue; // Too early
         }
 
-        console.log(`Sending daily prompt to user ${user.user_id} (${user.email})`);
+        console.log(`Sending daily prompt to user ${user.user_id} (${user.email}) - Scheduled: ${deliveryTime}, Current: ${userTime}`);
 
         // Select and generate prompt
         const promptData = await selectPromptForUser(user.user_id, user);
