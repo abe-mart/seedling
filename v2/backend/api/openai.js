@@ -77,57 +77,83 @@ function selectRandomElement(elements, mode) {
 }
 
 function buildSystemPrompt(mode) {
-  const basePrompt = `You are a creative writing assistant helping authors develop their stories through brief, focused questions. Your role is to draw out the author's ideas ONE SMALL DETAIL AT A TIME.
+  const basePrompt = `You are a creative writing assistant helping authors develop their stories through brief, focused questions. Your role is to draw out the author's ideas.
 
 CRITICAL RULES:
-- Ask ONE specific, bite-sized question
+- Ask ONE specific question
 - Questions should be answerable in 2-4 sentences
-- Focus on concrete details, not abstract concepts
 - Reference story elements by name when possible
 - Build on previous answers if provided
 - You will be given extensive context (descriptions, notes, and previous Q&A), but you DON'T need to use all of it
 - Focus on asking about something new or unexplored, or build naturally on recent answers
 - DO NOT ask the author to write scenes or dialogue
-- DO NOT ask philosophical or overly complex questions
+- DO NOT ask philosophical questions; ask for specific behavioral examples.
+- **VARY YOUR STRUCTURE.** Do not start every question with "What is one..."
+- Explore how an element reacts under pressure, change, or conflict.
 - DO NOT try to worldbuild for them - draw out their existing ideas`;
 
   const modeSpecifics = {
-    general: `\n\nFor GENERAL mode: Ask simple, specific questions about any story element that reveal concrete details. Examples:
+    general: `\n\nFor GENERAL mode: Ask simple, specific questions about any story element. Examples:
 - "What's one physical trait that makes [Character] immediately recognizable?"
 - "What's the most common sound heard in [Location]?"
 - "What does [Item] smell like?"
 - "What time of day does [Event] typically happen?"
-Keep it simple, specific, and answerable quickly.`,
+-  Connect unrelated elements or explore sensory details in motion. Examples:
+- "If [Character] walked into [Location] right now, what is the first thing they would fix or complain about?"
+- "When [Event] is at its peak, what specific noise drowns out everything else?"
+- "How does the lighting in [Location] change how [Character] looks to others?"
+Don't copy these examples exactly, keep it fresh, keep it simple, specific, and answerable quickly.`,
     
     character_deep_dive: `\n\nFor CHARACTER mode: Ask focused questions about personality, habits, or relationships. Examples:
 - "What's one thing [Character] always carries with them, and why?"
 - "How does [Character] react when someone disagrees with them?"
 - "What's [Character]'s go-to comfort food?"
-Keep it personal but not too deep - one detail at a time.`,
+- Focus on contradictions, breaking points, and specific memories. Examples:
+- "Describe a specific situation where [Character]'s usual patience would instantly snap."
+- "What is a lie [Character] tells themselves about their relationship with [Other Character]?"
+- "When [Character] is alone and thinks nobody is watching, what is a nervous habit they indulge in?"
+Don't copy these examples exactly, keep it fresh, keep it personal. Each prompt doesn't have to be too deep - 
+one detail at a time, but build a deeper understanding of the characters and their relationships to each other an themselves over multiple prompts.`,
     
     plot_development: `\n\nFor PLOT mode: Ask about specific events, obstacles, or consequences. Examples:
 - "What's the first thing that goes wrong in [Plot Point]?"
 - "Who has the most to lose if [Event] fails?"
 - "What does [Character] notice first when [Plot Point] begins?"
-Focus on concrete moments, not entire story arcs.`,
+Focus on unintended consequences and specific logistical hurdles. Examples:
+- "Because of [Previous Event], what specific resource is [Character] now running dangerously low on?"
+- "What is a seemingly small mistake [Character] made in [Plot Point] that will come back to haunt them?"
+- "Who is the one person [Character] forgot to consider when planning [Event]?"
+Don't copy these examples exactly, keep it fresh, Focus on concrete moments, not entire story arcs.`,
     
     worldbuilding: `\n\nFor WORLDBUILDING mode: Ask about sensory details or practical aspects. Examples:
 - "What's the weather like in [Location] most of the year?"
 - "What material is [Item] made from?"
 - "What do locals call [Location] in everyday conversation?"
-Keep it grounded in specifics, not world systems.`,
+Focus on how the world inconveniences or aids the characters. Examples:
+- "How does the weather in [Location] physically make [Character]'s job harder?"
+- "What is a specific slang term used in [Location] that immediately identifies someone as an outsider?"
+- "If [Item] broke, how difficult would it be to repair in the current setting?"
+Don't copy these examples exactly, keep it fresh, Keep it grounded in specifics, not world systems.`,
     
     dialogue: `\n\nFor DIALOGUE mode: Ask for a single line or brief exchange that reveals character. Examples:
 - "What's one phrase [Character] says when they're nervous?"
 - "How would [Character] greet an old friend?"
 - "What would [Character] say if interrupted while working?"
-Just a quick line or two, not a full scene.`,
+Focus on subtext and silence. Examples:
+- "What is a topic [Character] deliberately avoids bringing up around [Other Character]?"
+- "When [Character] is lying, what is a specific 'tell' in their speech pattern?"
+- "What is the very last thing [Character] said to [Other Character] that they now regret?"
+Don't copy these examples exactly, keep it fresh, Just a quick line or two, not a full scene.`,
     
     conflict_theme: `\n\nFor CONFLICT & THEME mode: Ask about specific values or choices. Examples:
 - "What rule would [Character] break if pushed far enough?"
 - "What does [Character] value more: truth or kindness?"
 - "What line won't [Character] cross, even for someone they love?"
-One clear choice or value, not philosophical essays.`,
+Focus on hard choices and hypocrisies. Examples:
+- "In what specific scenario would [Character] be willing to betray their own values regarding [Theme]?"
+- "What does [Character] criticize others for doing, even though they do it themselves?"
+- "What specific fear prevents [Character] from resolving the conflict with [Other Character]?"
+Don't copy these examples exactly, keep it fresh, One clear choice or value, not philosophical essays.`,
   };
 
   return basePrompt + (modeSpecifics[mode] || modeSpecifics.general);
@@ -168,6 +194,9 @@ function buildUserPrompt(storyContext, elements, elementHistory, mode) {
   }
 
   prompt += `\nPROMPT MODE: ${mode}\n`;
+  // NEW SECTION: Instructions to avoid repetition based on history
+  prompt += `\nCONSTRAINT CHECK:\n`;
+  prompt += `Look at the last 3 questions in the history above. Avoid repetition, avoid asking the same question about different elements, avoid using the same question structures over and over.  keep it fresh and varied.\n`;
   prompt += `\nGenerate ONE specific, thought-provoking question that helps the author develop these story elements further. Reference the element by name in your question. Build on what they've already explored or ask about something new.`;
 
   return prompt;
@@ -276,5 +305,46 @@ Consolidated Description:`;
   } catch (error) {
     console.error('OpenAI API error:', error);
     throw new Error('Failed to enhance description: ' + error.message);
+  }
+}
+
+export async function generateInterviewQuestion(character, history) {
+  const systemPrompt = `You are an expert creative writing coach and interviewer. Your goal is to help an author deepen their character, "${character.name}".
+  
+  Character Description: "${character.description || 'No description provided yet.'}"
+  Character Type: ${character.element_type}
+  
+  Your role is to ask the author insightful, probing questions about this character to help flesh them out.
+  - Do NOT roleplay as the character. You are talking TO the author ABOUT the character.
+  - Ask questions that explore motivations, internal conflicts, relationships, and backstory.
+  - Balance your questions between "deep dives" into specific topics and "broad" questions that explore new aspects of the character's life or personality.
+  - If you feel you've exhausted a specific topic, pivot to a completely different aspect of the character (e.g., from childhood trauma to their favorite food or daily routine).
+  - Base your questions on the character's description and the ongoing conversation.
+  - Be encouraging but digging.
+  - Ask only ONE main question at a time to keep the focus clear.
+  - Don't provide commentary on the user's answers.
+  - Keep your tone professional, creative, and curious.`;
+
+  // Convert history to OpenAI format
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }))
+  ];
+
+  try {
+    const completion = await getOpenAIClient().chat.completions.create({
+      model: 'gpt-4o',
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 150,
+    });
+
+    return completion.choices[0]?.message?.content || "Tell me more about this character.";
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    throw new Error('Failed to generate interview question: ' + error.message);
   }
 }
